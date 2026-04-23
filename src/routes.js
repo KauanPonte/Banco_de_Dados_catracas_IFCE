@@ -1,88 +1,181 @@
-const express = require('express')
-const router  = express.Router()
-const db      = require('./database')
+const express = require('express');
+const router  = express.Router();
+const db      = require('./database');
 
-const buscarCartao  = db.prepare(`SELECT nome, status FROM cartao WHERE uid = ?`)
-const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`)
+const buscarCartao  = db.prepare(`SELECT nome, status FROM cartao WHERE uid = ?`);
+const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`);
+
 const listarAcessos = db.prepare(`
   SELECT uid, resultado, data_hora
   FROM registro_acesso
   ORDER BY id DESC
   LIMIT 50
-`)
-const listarCartoes = db.prepare(`SELECT id, uid, nome, matricula, status, criado_em FROM cartao`)
+`);
+
+const listarCartoes = db.prepare(`
+  SELECT id, uid, nome, matricula, status, criado_em
+  FROM cartao
+`);
+
 const cadastrarCartao = db.prepare(`
   INSERT INTO cartao (uid, nome, matricula, status)
   VALUES (@uid, @nome, @matricula, @status)
-`)
-const atualizarStatus = db.prepare(`UPDATE cartao SET status = ? WHERE uid = ?`)
+`);
 
-// POST /acesso — chamado pelo ESP32
+const atualizarStatus = db.prepare(`
+  UPDATE cartao SET status = ? WHERE uid = ?
+`);
+
+
+//  POST /acesso — chamado pelo ESP32
 router.post('/acesso', (req, res) => {
-  const uid = (req.body.uid || '').toUpperCase().trim()
+  const uid = (req.body.uid || '')
+    .toUpperCase()
+    .replace(/[^A-F0-9]/g, '')
+    .trim();
 
+  // UID inválido
   if (!uid) {
-    return res.json({ resultado: 'bloqueado', motivo: 'UID inválido' })
+    return res.json({
+      resultado: 'bloqueado',
+      motivo: 'UID inválido',
+      liberar: false
+    });
   }
 
-  const cartao = buscarCartao.get(uid)
+  const cartao = buscarCartao.get(uid);
 
+  //  Não cadastrado
   if (!cartao) {
-    salvarAcesso.run(uid, 'bloqueado')
-    return res.json({ resultado: 'bloqueado', motivo: 'Cartão não cadastrado' })
+    salvarAcesso.run(uid, 'bloqueado');
+    return res.json({
+      resultado: 'bloqueado',
+      motivo: 'Cartão não cadastrado',
+      liberar: false
+    });
   }
 
-  if (cartao.status === 'aprovado') {
-    salvarAcesso.run(uid, 'entrada')
-    return res.json({ resultado: 'entrada', nome: cartao.nome })
+  //  Bloqueado pelo sistema
+  if (cartao.status !== 'aprovado') {
+    salvarAcesso.run(uid, 'bloqueado');
+    return res.json({
+      resultado: 'bloqueado',
+      motivo: 'Acesso bloqueado',
+      liberar: false
+    });
   }
 
-  salvarAcesso.run(uid, 'bloqueado')
-  return res.json({ resultado: 'bloqueado', motivo: 'Acesso bloqueado pelo administrador' })
-})
+  //  Busca último acesso
+  const ultimoAcesso = db.prepare(`
+    SELECT resultado, data_hora
+    FROM registro_acesso
+    WHERE uid = ?
+    ORDER BY id DESC
+    LIMIT 1
+  `).get(uid);
 
-// GET /registros — histórico de acessos
+  //  Proteção anti-repetição
+  if (ultimoAcesso) {
+    const agora = Date.now();
+    const ultimo = new Date(
+      ultimoAcesso.data_hora.replace(' ', 'T') + 'Z'
+    ).getTime();
+
+    const diff = agora - ultimo;
+    console.log('Diferença ms:', diff);
+
+    if (diff < 5000) {
+      return res.json({
+        resultado: 'bloqueado',
+        motivo: 'Aguarde alguns segundos',
+        liberar: false
+      });
+    }
+  }
+
+  //  Alterna entre entrada e saída
+  let novoResultado = 'entrada';
+
+  if (ultimoAcesso?.resultado === 'entrada') {
+    novoResultado = 'bloqueado';
+  }
+
+  //  Salva acesso
+  salvarAcesso.run(uid, novoResultado);
+
+  // Resposta
+  return res.json({
+    resultado: novoResultado,
+    nome: cartao.nome,
+    liberar: true
+  });
+});
+
+
+//  GET /registros
 router.get('/registros', (req, res) => {
-  res.json(listarAcessos.all())
-})
+  res.json(listarAcessos.all());
+});
 
-// GET /cartoes — lista todos os cartões
+
+//  GET /cartoes
 router.get('/cartoes', (req, res) => {
-  res.json(listarCartoes.all())
-})
+  res.json(listarCartoes.all());
+});
 
-// POST /cartoes — cadastra novo cartão
+
+//  POST /cartoes
 router.post('/cartoes', (req, res) => {
-  const { uid, nome, matricula, status } = req.body
+  const { uid, nome, matricula, status } = req.body;
 
   if (!uid || !nome || !matricula || !status) {
-    return res.status(400).json({ erro: 'Campos obrigatórios: uid, nome, matricula, status' })
+    return res.status(400).json({
+      erro: 'Campos obrigatórios: uid, nome, matricula, status'
+    });
   }
 
   try {
-    cadastrarCartao.run({ uid: uid.toUpperCase(), nome, matricula, status })
-    res.status(201).json({ mensagem: 'Cartão cadastrado com sucesso' })
-  } catch (e) {
-    res.status(409).json({ erro: 'UID já cadastrado' })
-  }
-})
+    cadastrarCartao.run({
+      uid: uid.toUpperCase(),
+      nome,
+      matricula,
+      status
+    });
 
-// PATCH /cartoes/:uid/status — bloqueia ou aprova um cartão
+    res.status(201).json({
+      mensagem: 'Cartão cadastrado com sucesso'
+    });
+  } catch (e) {
+    res.status(409).json({
+      erro: 'UID já cadastrado'
+    });
+  }
+});
+
+
+//  PATCH /cartoes/:uid/status
 router.patch('/cartoes/:uid/status', (req, res) => {
-  const uid    = req.params.uid.toUpperCase()
-  const status = req.body.status
+  const uid    = req.params.uid.toUpperCase();
+  const status = req.body.status;
 
   if (!['aprovado', 'bloqueado'].includes(status)) {
-    return res.status(400).json({ erro: 'Status deve ser aprovado ou bloqueado' })
+    return res.status(400).json({
+      erro: 'Status deve ser aprovado ou bloqueado'
+    });
   }
 
-  const resultado = atualizarStatus.run(status, uid)
+  const resultado = atualizarStatus.run(status, uid);
 
   if (resultado.changes === 0) {
-    return res.status(404).json({ erro: 'Cartão não encontrado' })
+    return res.status(404).json({
+      erro: 'Cartão não encontrado'
+    });
   }
 
-  res.json({ mensagem: `Cartão ${uid} agora está ${status}` })
-})
+  res.json({
+    mensagem: `Cartão ${uid} agora está ${status}`
+  });
+});
 
-module.exports = router
+
+module.exports = router;
