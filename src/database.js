@@ -18,7 +18,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS registro_acesso (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     uid       TEXT NOT NULL,
-    resultado TEXT NOT NULL CHECK(resultado IN ('entrada', 'bloqueado')),
+    resultado TEXT NOT NULL CHECK(resultado IN ('entrada', 'bloqueado','teste')),
     data_hora TEXT DEFAULT (datetime('now'))
   );
 `)
