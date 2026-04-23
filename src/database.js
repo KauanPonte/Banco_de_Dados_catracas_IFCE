@@ -30,8 +30,8 @@ const inserir = db.prepare(`
 `)
 
 const cartoesTeste = [
-  { uid: 'A1B2C3D4', nome: 'João Silva',  matricula: '2024001', status: 'aprovado'  },
-  { uid: 'E5F6G7H8', nome: 'Maria Souza', matricula: '2024002', status: 'aprovado'  },
+  { uid: '042E8122257980', nome: 'Larissa Maria',  matricula: '2024001', status: 'aprovado'  },
+  { uid: '040C2D6A777980', nome: 'Aluno teste 3', matricula: '2024002', status: 'aprovado'  },
   { uid: 'X9Y0Z1W2', nome: 'Pedro Lima',  matricula: '2024003', status: 'bloqueado' },
 ]
 
