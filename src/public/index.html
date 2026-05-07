@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Catraca IFCE</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <!-- NAVBAR -->
+  <header class="navbar">
+
+    <div class="logo-area">
+
+      <img
+       src="assets/ifce_logo.png"
+        class="logo"
+      >
+         <h2>Controle de Acesso do IFCE</h2>
+    </div>
+
+    <nav class="menu">
+
+      <button onclick="mostrarAba('todos')">
+      Todos os alunos
+      </button>
+
+      <button onclick="mostrarAba('cartoes')">
+         Cartões cadastrados
+       </button>
+
+     <button onclick="mostrarAba('bloqueados')">
+       Cartões bloqueados
+     </button>
+
+    </nav>
+
+  </header>
+
+
+  <!-- CONTEÚDO -->
+
+  <main class="container">
+
+    <!-- TODOS -->
+    <section id="todos" class="aba">
+
+  <!-- CARD CADASTRO -->
+
+  <div class="card">
+
+    <h1>Novo Cartão</h1>
+
+    <input type="text"
+           id="uid"
+           placeholder="UID">
+
+    <input type="text"
+           id="nome"
+           placeholder="Nome">
+
+    <input type="text"
+           id="matricula"
+           placeholder="Matrícula">
+
+    <select id="status">
+
+      <option value="aprovado">
+        Aprovado
+      </option>
+
+      <option value="bloqueado">
+        Bloqueado
+      </option>
+
+    </select>
+
+
+      
+    <button 
+    class="btn-cadastrar"
+    onclick="cadastrarCartao()">
+      Cadastrar
+    </button> 
+        
+
+  </div>
+
+
+  <!-- TABELA -->
+
+  <div class="card">
+
+    <h1>Todos os alunos</h1>
+
+    <table>
+
+      <thead>
+        <tr>
+          <th>UID</th>
+          <th>Nome</th>
+          <th>Matrícula</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+
+      <tbody id="tabelaTodos"></tbody>
+
+    </table>
+
+  </div>
+
+</section>
+
+
+    <!-- CARTÕES -->
+    <section id="cartoes" class="aba hidden">
+
+      <h1>Cartões cadastrados</h1>
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>UID</th>
+            <th>Nome</th>
+            <th>Matrícula</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody id="tabelaCartoes"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- BLOQUEADOS -->
+    <section id="bloqueados" class="aba hidden">
+
+      <h1>Cartões bloqueados</h1>
+
+      <table>
+
+        <thead>
+          <tr>
+            <th>UID</th>
+            <th>Nome</th>
+            <th>Matrícula</th>
+          </tr>
+        </thead>
+
+        <tbody id="tabelaBloqueados"></tbody>
+
+      </table>
+
+    </section>
+
+
+    <!-- CADASTRO -->
+    <section id="cadastro" class="aba hidden">
+
+      <div class="card">
+
+        <h1>Novo Cartão</h1>
+
+        <input type="text" id="uid" placeholder="UID">
+
+        <input type="text" id="nome" placeholder="Nome">
+
+        <input type="text" id="matricula" placeholder="Matrícula">
+
+        <select id="status">
+          <option value="aprovado">Aprovado</option>
+          <option value="bloqueado">Bloqueado</option>
+        </select>
+
+        <button onclick="cadastrarCartao()">
+          Cadastrar
+        </button>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script src="app.js"></script>
+
+</body>
+</html>

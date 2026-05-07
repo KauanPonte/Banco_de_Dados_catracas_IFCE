@@ -1,11 +1,19 @@
 const express = require('express')
+const path = require('path')
 const routes = require('./routes')
+
 
 const app = express()
 const PORT = 5000
 
 app.use(express.json())
-app.get('/', (req, res) => { res.send('API da catraca funcionando 🚀'); });
+app.use(express.static(
+  path.join(__dirname, 'public')
+))
+
+app.get('/', (req, res) => {res.sendFile(
+    path.join(__dirname, 'public', 'index.html')) 
+  });
 app.use(routes)
 
 app.listen(PORT, '0.0.0.0', () => {
