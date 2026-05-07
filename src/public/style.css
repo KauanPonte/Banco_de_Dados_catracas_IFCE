@@ -1,0 +1,115 @@
+body{
+  margin:0;
+  font-family:Arial;
+  background:#f5f5f5;
+}
+
+/* NAVBAR */
+
+.navbar{
+  background:white;
+  border-bottom:1px solid #ddd;
+}
+
+.logo-area{
+  display:flex;
+  align-items:center;
+  padding:15px 40px;
+}
+
+.logo{
+  width:220px;
+  height:auto;
+}
+
+.logo-text h2{
+  margin:0;
+  font-size:22px;
+}
+
+.logo-text span{
+  color:#555;
+}
+
+.menu{
+  display:flex;
+  gap:20px;
+  padding:15px 40px;
+  border-top:1px solid #eee;
+}
+
+.menu button{
+  border:none;
+  background:none;
+  font-size:16px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.menu button:hover{
+  color:green;
+}
+
+/* CONTAINER */
+
+.container{
+  width:95%;
+  margin:auto;
+  padding:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:10px;
+}
+
+input, select{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  box-sizing:border-box;
+}
+
+button{
+  padding:10px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+}
+
+th, td{
+  border:1px solid #ddd;
+  padding:12px;
+  text-align:center;
+}
+
+.hidden{
+  display:none;
+}
+
+.btn-cadastrar{
+  width:100%;
+  margin-top:15px;
+  padding:12px;
+
+  background:#198754;
+  color:white;
+
+  border:none;
+  border-radius:6px;
+
+  font-size:16px;
+  font-weight:bold;
+
+  cursor:pointer;
+
+  transition:0.2s;
+}
+
+.btn-cadastrar:hover{
+  background:#157347;
+}
