@@ -5,6 +5,13 @@ const db      = require('./database');
 const buscarCartao  = db.prepare(`SELECT nome, status FROM cartao WHERE uid = ?`);
 const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`);
 
+
+function hexParaUID(hex){
+const bytes = hex.match(/.{2}/g)
+const invertido = bytes.reverse().join('')
+return BigInt ('0x' + invertido).toString()
+}
+
 const listarAcessos = db.prepare(`
   SELECT uid, resultado, data_hora
   FROM registro_acesso
@@ -26,16 +33,20 @@ const atualizarStatus = db.prepare(`
   UPDATE cartao SET status = ? WHERE uid = ?
 `);
 
+const excluirCartao = db.prepare(`
+  DELETE FROM cartao WHERE uid = ?
+`);
+
 
 //  POST /acesso — chamado pelo ESP32
 router.post('/acesso', (req, res) => {
-  const uid = (req.body.uid || '')
+  const uidHex = (req.body.uid || '')
     .toUpperCase()
     .replace(/[^A-F0-9]/g, '')
     .trim();
 
   // UID inválido
-  if (!uid) {
+  if (!uidHex) {
     return res.json({
       resultado: 'bloqueado',
       motivo: 'UID inválido',
@@ -43,7 +54,14 @@ router.post('/acesso', (req, res) => {
     });
   }
 
+  const uid = hexParaUID(uidHex);
+  console.log('UID convertido:', uid) // ← aqui
+  console.log('Tamanho:', uid.length)
+
   const cartao = buscarCartao.get(uid);
+  const todos = db.prepare('SELECT uid, length(uid) as tam FROM cartao').all()
+  console.log('Cartões no banco:', todos)
+  console.log('Cartão encontrado:', cartao)
 
   //  Não cadastrado
   if (!cartao) {
@@ -126,6 +144,7 @@ router.get('/cartoes', (req, res) => {
 
 //  POST /cartoes
 router.post('/cartoes', (req, res) => {
+  console.log('Cadastrando cartão:', req.body)
   const { uid, nome, matricula, status } = req.body;
 
   if (!uid || !nome || !matricula || !status) {
@@ -229,5 +248,18 @@ router.delete('/cartoes', (req, res) => {
     mensagem:'Cartões removidos'
   })
 })
+
+// DELETE /cartoes/:uid
+router.delete('/cartoes/:uid', (req, res) => {
+  const uid = req.params.uid.toUpperCase();
+  const resultado = excluirCartao.run(uid);
+
+  if (resultado.changes === 0) {
+    return res.status(404).json({ erro: 'Cartão não encontrado' });
+  }
+
+  res.json({ mensagem: `Cartão ${uid} removido` });
+});
+
 
 module.exports = router;

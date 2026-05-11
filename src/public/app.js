@@ -30,6 +30,10 @@ async function cadastrarCartao() {
 
   alert('Cartão cadastrado!')
 
+  document.getElementById('uid').value = ''
+  document.getElementById('nome').value = ''
+  document.getElementById('matricula').value = ''
+
   carregarCartoes()
 }
 
@@ -113,6 +117,25 @@ async function carregarCartoes() {
       </tr>
     `
   })
+}
+
+async function excluirCartao(uid) {
+  if (!confirm(`Deseja apagar o cartão ${uid}?`)) return
+
+  await fetch(`/cartoes/${uid}`, { method: 'DELETE' })
+  carregarCartoes()
+}
+
+async function alterarStatus(uid, statusAtual) {
+  const novoStatus = statusAtual === 'aprovado' ? 'bloqueado' : 'aprovado'
+
+  await fetch(`/cartoes/${uid}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: novoStatus })
+  })
+
+  carregarCartoes()
 }
 
 carregarCartoes()
