@@ -54,44 +54,135 @@ async function carregarCartoes() {
 
   const cartoes = await resposta.json()
 
-  const tabelaTodos =
+  const tabela =
     document.getElementById('tabelaTodos')
 
-  const tabelaCartoes =
-    document.getElementById('tabelaCartoes')
-
-  const tabelaBloqueados =
-    document.getElementById('tabelaBloqueados')
-
-  tabelaTodos.innerHTML = ''
-  tabelaCartoes.innerHTML = ''
-  tabelaBloqueados.innerHTML = ''
+  tabela.innerHTML = ''
 
   cartoes.forEach(cartao => {
 
-    const linha = `
+    tabela.innerHTML += `
+
       <tr>
+
+        <td>
+          <input
+            type="checkbox"
+            class="check-aluno"
+            value="${cartao.uid}">
+        </td>
+
         <td>${cartao.uid}</td>
+
         <td>${cartao.nome}</td>
+
         <td>${cartao.matricula}</td>
-        <td>${cartao.status}</td>
+
+        <td>
+
+          <button
+            class="${
+              cartao.status === 'aprovado'
+                ? 'btn-aprovado'
+                : 'btn-bloqueado'
+            }"
+
+            onclick="alterarStatus(
+              '${cartao.uid}',
+              '${cartao.status}'
+            )">
+
+            ${cartao.status}
+
+          </button>
+
+        </td>
+
+        <td>
+
+          <button
+            class="btn-remover"
+            onclick="excluirAluno('${cartao.uid}')">
+
+            Excluir
+
+          </button>
+
+        </td>
+
       </tr>
     `
-
-    tabelaTodos.innerHTML += linha
-    tabelaCartoes.innerHTML += linha
-
-    if (cartao.status === 'bloqueado') {
-
-      tabelaBloqueados.innerHTML += `
-        <tr>
-          <td>${cartao.uid}</td>
-          <td>${cartao.nome}</td>
-          <td>${cartao.matricula}</td>
-        </tr>
-      `
-    }
   })
 }
 
 carregarCartoes()
+
+async function alterarStatus(uid, statusAtual) {
+
+  const novoStatus =
+    statusAtual === 'aprovado'
+      ? 'bloqueado'
+      : 'aprovado'
+
+  await fetch(`/cartoes/${uid}/status`, {
+
+    method:'PATCH',
+
+    headers:{
+      'Content-Type':'application/json'
+    },
+
+    body: JSON.stringify({
+      status: novoStatus
+    })
+  })
+
+  carregarCartoes()
+}
+
+
+async function excluirAluno(uid) {
+
+  if (!confirm('Excluir aluno?')) return
+
+  await fetch(`/cartoes/${uid}`, {
+    method:'DELETE'
+  })
+
+  carregarCartoes()
+}
+
+
+async function excluirSelecionados() {
+
+  const checks =
+    document.querySelectorAll(
+      '.check-aluno:checked'
+    )
+
+  const uids = [...checks]
+    .map(c => c.value)
+
+  if (uids.length === 0) {
+
+    alert('Nenhum aluno selecionado')
+    return
+  }
+
+  if (!confirm('Excluir selecionados?')) return
+
+  await fetch('/cartoes', {
+
+    method:'DELETE',
+
+    headers:{
+      'Content-Type':'application/json'
+    },
+
+    body: JSON.stringify({
+      uids
+    })
+  })
+
+  carregarCartoes()
+}

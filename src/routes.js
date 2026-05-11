@@ -176,6 +176,58 @@ router.patch('/cartoes/:uid/status', (req, res) => {
     mensagem: `Cartão ${uid} agora está ${status}`
   });
 });
+// DELETE /cartoes/:uid
+router.delete('/cartoes/:uid', (req, res) => {
 
+  const uid = req.params.uid.toUpperCase()
+
+  const remover = db.prepare(`
+    DELETE FROM cartao WHERE uid = ?
+  `)
+
+  const resultado = remover.run(uid)
+
+  if (resultado.changes === 0) {
+
+    return res.status(404).json({
+      erro: 'Cartão não encontrado'
+    })
+  }
+
+  res.json({
+    mensagem: 'Cartão removido'
+  })
+})
+
+
+// DELETE vários
+router.delete('/cartoes', (req, res) => {
+
+  const { uids } = req.body
+
+  if (!uids || !Array.isArray(uids)) {
+
+    return res.status(400).json({
+      erro:'Lista inválida'
+    })
+  }
+
+  const remover = db.prepare(`
+    DELETE FROM cartao WHERE uid = ?
+  `)
+
+  const removerVarios = db.transaction((lista) => {
+
+    for (const uid of lista) {
+      remover.run(uid)
+    }
+  })
+
+  removerVarios(uids)
+
+  res.json({
+    mensagem:'Cartões removidos'
+  })
+})
 
 module.exports = router;
