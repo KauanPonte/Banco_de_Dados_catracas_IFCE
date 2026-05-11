@@ -30,6 +30,10 @@ async function cadastrarCartao() {
 
   alert('Cartão cadastrado!')
 
+  document.getElementById('uid').value = ''
+  document.getElementById('nome').value = ''
+  document.getElementById('matricula').value = ''
+
   carregarCartoes()
 }
 
@@ -68,30 +72,76 @@ async function carregarCartoes() {
   tabelaBloqueados.innerHTML = ''
 
   cartoes.forEach(cartao => {
+    const aprovado = cartao.status === 'aprovado'
 
     const linha = `
       <tr>
         <td>${cartao.uid}</td>
         <td>${cartao.nome}</td>
         <td>${cartao.matricula}</td>
-        <td>${cartao.status}</td>
+        <td>
+          <button
+            class="btn-status ${aprovado ? 'aprovado' : 'bloqueado'}"
+            onclick="alterarStatus('${cartao.uid}', '${cartao.status}')">
+            ${aprovado ? 'Aprovado' : 'Bloqueado'}
+          </button>
+        </td>
+        <td>
+          <button
+            class="btn-apagar"
+            onclick="excluirCartao('${cartao.uid}')">
+            Apagar
+          </button>
+        </td>
       </tr>
     `
 
     tabelaTodos.innerHTML += linha
     tabelaCartoes.innerHTML += linha
 
-    if (cartao.status === 'bloqueado') {
-
+    if (!aprovado) {
       tabelaBloqueados.innerHTML += `
         <tr>
           <td>${cartao.uid}</td>
           <td>${cartao.nome}</td>
           <td>${cartao.matricula}</td>
+          <td>
+            <button
+              class="btn-status bloqueado"
+              onclick="alterarStatus('${cartao.uid}', '${cartao.status}')">
+              Bloqueado
+            </button>
+          </td>
+          <td>
+            <button
+              class="btn-apagar"
+              onclick="excluirCartao('${cartao.uid}')">
+              Apagar
+            </button>
+          </td>
         </tr>
       `
     }
   })
+}
+
+async function excluirCartao(uid) {
+  if (!confirm(`Deseja apagar o cartão ${uid}?`)) return
+
+  await fetch(`/cartoes/${uid}`, { method: 'DELETE' })
+  carregarCartoes()
+}
+
+async function alterarStatus(uid, statusAtual) {
+  const novoStatus = statusAtual === 'aprovado' ? 'bloqueado' : 'aprovado'
+
+  await fetch(`/cartoes/${uid}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: novoStatus })
+  })
+
+  carregarCartoes()
 }
 
 carregarCartoes()

@@ -113,3 +113,49 @@ th, td{
 .btn-cadastrar:hover{
   background:#157347;
 }
+
+.btn-status {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.btn-status.aprovado {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.btn-status.aprovado:hover {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.btn-status.bloqueado {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.btn-status.bloqueado:hover {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.btn-apagar {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #ef4444;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 13px;
+  transition: 0.2s;
+}
+
+.btn-apagar:hover {
+  background: #b91c1c;
+}
