@@ -13,32 +13,33 @@
   <!-- NAVBAR -->
   <header class="navbar">
 
-    <div class="logo-area">
+  <div class="topo">
 
-      <img
-       src="assets/ifce_logo.png"
-        class="logo"
-      >
-         <h2>Controle de Acesso do IFCE</h2>
-    </div>
+    <img src="assets/ifce_logo.png" class="logo">
 
-    <nav class="menu">
+    <h1 class="titulo-sistema">
+      Controle de Acesso do IFCE
+    </h1>
 
-      <button onclick="mostrarAba('todos')">
+  </div>
+
+  <nav class="menu">
+
+    <button onclick="mostrarAba('todos')">
       Todos os alunos
-      </button>
+    </button>
 
-      <button onclick="mostrarAba('cartoes')">
-         Cartões cadastrados
-       </button>
+    <button onclick="mostrarAba('cartoes')">
+      Cartões cadastrados
+    </button>
 
-     <button onclick="mostrarAba('bloqueados')">
-       Cartões bloqueados
-     </button>
+    <button onclick="mostrarAba('bloqueados')">
+      Cartões bloqueados
+    </button>
 
-    </nav>
+  </nav>
 
-  </header>
+</header>
 
 
   <!-- CONTEÚDO -->
@@ -100,13 +101,19 @@
 
       <thead>
         <tr>
+        <th></th>
           <th>UID</th>
           <th>Nome</th>
           <th>Matrícula</th>
           <th>Status</th>
+          <th>Ações</th>
         </tr>
       </thead>
-
+       <button
+           class="btn-excluir"
+           onclick="excluirSelecionados()">
+           Excluir selecionados
+           </button>
       <tbody id="tabelaTodos"></tbody>
 
     </table>

@@ -1,8 +1,10 @@
 body{
   margin:0;
-  font-family:Arial;
-  background:#f5f5f5;
+  font-family:Arial, Helvetica, sans-serif;
+  background:#f4f4f4;
+  color:#222;
 }
+
 
 /* NAVBAR */
 
@@ -11,98 +13,71 @@ body{
   border-bottom:1px solid #ddd;
 }
 
+
+/* TOPO */
+
 .logo-area{
+
   display:flex;
   align-items:center;
-  padding:15px 40px;
+  justify-content:center;
+
+  gap:30px;
+
+  padding:20px;
 }
+
 
 .logo{
   width:220px;
   height:auto;
 }
 
-.logo-text h2{
+
+/* TÍTULO */
+
+.titulo-sistema{
+
   margin:0;
-  font-size:22px;
-}
 
-.logo-text span{
-  color:#555;
-}
+  font-size:42px;
 
-.menu{
-  display:flex;
-  gap:20px;
-  padding:15px 40px;
-  border-top:1px solid #eee;
-}
-
-.menu button{
-  border:none;
-  background:none;
-  font-size:16px;
-  cursor:pointer;
   font-weight:bold;
-}
 
-.menu button:hover{
-  color:green;
-}
-
-/* CONTAINER */
-
-.container{
-  width:95%;
-  margin:auto;
-  padding:20px;
-}
-
-.card{
-  background:white;
-  padding:20px;
-  border-radius:10px;
-}
-
-input, select{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  box-sizing:border-box;
-}
-
-button{
-  padding:10px;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:white;
-}
-
-th, td{
-  border:1px solid #ddd;
-  padding:12px;
   text-align:center;
 }
 
-.hidden{
-  display:none;
-}
 
-.btn-cadastrar{
-  width:100%;
-  margin-top:15px;
-  padding:12px;
+/* MENU */
+
+.menu{
+
+  display:flex;
+
+  align-items:center;
+
+  gap:10px;
 
   background:#198754;
+
+  padding:0 40px;
+}
+
+
+/* BOTÕES MENU */
+
+.menu button{
+
+  background:transparent;
+
   color:white;
 
   border:none;
-  border-radius:6px;
 
-  font-size:16px;
+  padding:18px 20px;
+
+  font-size:15px;
+
   font-weight:bold;
 
   cursor:pointer;
@@ -110,52 +85,234 @@ th, td{
   transition:0.2s;
 }
 
+
+/* HOVER */
+
+.menu button:hover{
+
+  background:rgba(255,255,255,0.12);
+}
+
+/* CONTAINER */
+
+.container{
+
+  width:82%;
+
+  max-width:1100px;
+
+  margin:auto;
+
+  padding:35px 0;
+}
+
+
+/* CARDS */
+
+.card{
+
+  background:white;
+
+  padding:30px;
+
+  border-radius:14px;
+
+  box-shadow:0 2px 10px rgba(0,0,0,0.08);
+
+  margin-bottom:30px;
+}
+
+
+/* TÍTULOS */
+
+h1{
+
+  margin-top:0;
+
+  margin-bottom:25px;
+
+  font-size:30px;
+}
+
+
+/* INPUTS */
+
+input,
+select{
+
+  width:100%;
+
+  padding:14px;
+
+  margin-top:12px;
+
+  border:1px solid #ccc;
+
+  border-radius:8px;
+
+  box-sizing:border-box;
+
+  font-size:15px;
+}
+
+
+/* BOTÃO CADASTRAR */
+
+.btn-cadastrar{
+
+  width:100%;
+
+  margin-top:20px;
+
+  padding:14px;
+
+  background:#198754;
+
+  color:white;
+
+  border:none;
+
+  border-radius:8px;
+
+  font-size:17px;
+
+  font-weight:bold;
+
+  cursor:pointer;
+
+  transition:0.2s;
+}
+
+
 .btn-cadastrar:hover{
   background:#157347;
 }
 
-.btn-status {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 13px;
-  transition: 0.2s;
+
+/* TABELAS */
+
+table{
+
+  width:100%;
+
+  border-collapse:collapse;
+
+  overflow:hidden;
+
+  border-radius:10px;
+
+  background:white;
 }
 
-.btn-status.aprovado {
-  background: #d1fae5;
-  color: #065f46;
+
+/* CABEÇALHO */
+
+thead{
+
+  background:#198754;
+
+  color:white;
 }
 
-.btn-status.aprovado:hover {
-  background: #fecaca;
-  color: #991b1b;
+
+th{
+
+  padding:16px;
+
+  font-size:16px;
 }
 
-.btn-status.bloqueado {
-  background: #fecaca;
-  color: #991b1b;
+
+/* LINHAS */
+
+td{
+
+  padding:14px;
+
+  border-bottom:1px solid #eee;
+
+  text-align:center;
 }
 
-.btn-status.bloqueado:hover {
-  background: #d1fae5;
-  color: #065f46;
+
+tr:hover{
+  background:#f8f8f8;
 }
 
-.btn-apagar {
-  padding: 6px 14px;
-  border: none;
-  border-radius: 6px;
-  background: #ef4444;
-  color: white;
-  font-weight: bold;
-  cursor: pointer;
-  font-size: 13px;
-  transition: 0.2s;
+
+/* ESCONDER ABAS */
+
+.hidden{
+  display:none;
 }
 
-.btn-apagar:hover {
-  background: #b91c1c;
+/* BOTÃO APROVADO */
+
+.btn-aprovado{
+
+  background:#198754;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* BOTÃO BLOQUEADO */
+
+.btn-bloqueado{
+
+  background:#dc3545;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* REMOVER */
+
+.btn-remover{
+
+  background:#6c757d;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* EXCLUIR SELECIONADOS */
+
+.btn-excluir{
+
+  background:#dc3545;
+  color:white;
+
+  border:none;
+
+  padding:12px 18px;
+
+  border-radius:8px;
+
+  margin-bottom:20px;
+
+  cursor:pointer;
+
+  font-weight:bold;
 }
