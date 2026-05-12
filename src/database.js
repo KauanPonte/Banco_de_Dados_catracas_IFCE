@@ -18,7 +18,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS registro_acesso (
     id        INTEGER PRIMARY KEY AUTOINCREMENT,
     uid       TEXT NOT NULL,
-    resultado TEXT NOT NULL CHECK(resultado IN ('entrada', 'bloqueado','teste')),
+    resultado TEXT NOT NULL CHECK(resultado IN ('entrada', 'saida', 'bloqueado','teste')),
     data_hora TEXT DEFAULT (datetime('now'))
   );
 `)
@@ -28,15 +28,5 @@ const inserir = db.prepare(`
   INSERT OR IGNORE INTO cartao (uid, nome, matricula, status)
   VALUES (@uid, @nome, @matricula, @status)
 `)
-
-const cartoesTeste = [
-  { uid: '042E8122257980', nome: 'Larissa Maria',  matricula: '2024001', status: 'aprovado'  },
-  { uid: '040C2D6A777980', nome: 'Aluno teste 3', matricula: '2024002', status: 'aprovado'  },
-  { uid: 'X9Y0Z1W2', nome: 'Pedro Lima',  matricula: '2024003', status: 'bloqueado' },
-]
-
-for (const cartao of cartoesTeste) {
-  inserir.run(cartao)
-}
 
 module.exports = db

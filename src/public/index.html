@@ -24,19 +24,23 @@
 
     <nav class="menu">
 
-      <button onclick="mostrarAba('todos')">
+    <button onclick="mostrarAba('todos')">
+      Novos cadastros
+    </button>
+
+    <button onclick="mostrarAba('cartoes'); carregarCartoes()">
       Todos os alunos
       </button>
 
-      <button onclick="mostrarAba('cartoes')">
-         Cartões cadastrados
-       </button>
+    <button onclick="mostrarAba('bloqueados'); carregarCartoesBloqueados()">
+      Cartões bloqueados
+    </button>
 
-     <button onclick="mostrarAba('bloqueados')">
-       Cartões bloqueados
-     </button>
+    <button onclick="mostrarAba('historico'); iniciarHistorico()">
+      Histórico
+    </button>
 
-    </nav>
+  </nav>
 
   </header>
 
@@ -54,9 +58,13 @@
 
     <h1>Novo Cartão</h1>
 
-    <input type="text"
-           id="uid"
-           placeholder="UID">
+  <div style="display: flex; gap: 8px">
+    <input type="text" id="uid" placeholder="UID">
+
+    <button class="btn-cadastrar" onclick="aguardarCartao()" style="width:160px ;">
+      Ler cartão
+    </button>
+  </div>
 
     <input type="text"
            id="nome"
@@ -90,28 +98,36 @@
   </div>
 
 
-  <!-- TABELA -->
+</section>
 
-  <div class="card">
 
-    <h1>Todos os alunos</h1>
+    <!-- TODOS OS ALUNOS -->
+    <section id="cartoes" class="aba hidden">
 
-    <table>
+      <div class="card">
 
-      <thead>
-        <tr>
-          <th>UID</th>
-          <th>Nome</th>
-          <th>Matrícula</th>
-          <th>Status</th>
-        </tr>
-      </thead>
+        <h1>Todos os alunos</h1>
 
-      <tbody id="tabelaTodos"></tbody>
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>UID</th>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <button
+            class="btn-excluir"
+            onclick="excluirSelecionados()">
+            Excluir selecionados
+          </button>
+          <tbody id="tabelaTodos"></tbody>
+        </table>
 
-    </table>
-
-  </div>
+      </div>
 
 </section>
 
@@ -161,27 +177,39 @@
     </section>
 
 
-    <!-- CADASTRO -->
-    <section id="cadastro" class="aba hidden">
+    <!-- HISTÓRICO -->
+    <section id="historico" class="aba hidden">
 
       <div class="card">
 
-        <h1>Novo Cartão</h1>
+        <h1>Histórico de acessos</h1>
 
-        <input type="text" id="uid" placeholder="UID">
+        <div class="filtros">
+          <input
+            type="text"
+            id="filtroTexto"
+            placeholder="Buscar por nome ou matrícula"
+            oninput="filtrarHistorico()">
 
-        <input type="text" id="nome" placeholder="Nome">
+          <select id="filtroResultado" onchange="filtrarHistorico()">
+            <option value="">Todos</option>
+            <option value="entrada">Entrada</option>
+            <option value="bloqueado">Bloqueado</option>
+          </select>
+        </div>
 
-        <input type="text" id="matricula" placeholder="Matrícula">
-
-        <select id="status">
-          <option value="aprovado">Aprovado</option>
-          <option value="bloqueado">Bloqueado</option>
-        </select>
-
-        <button onclick="cadastrarCartao()">
-          Cadastrar
-        </button>
+        <table>
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>UID</th>
+              <th>Resultado</th>
+              <th>Data / Hora</th>
+            </tr>
+          </thead>
+          <tbody id="tabelaHistorico"></tbody>
+        </table>
 
       </div>
 

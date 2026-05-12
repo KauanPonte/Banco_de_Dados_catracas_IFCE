@@ -87,6 +87,14 @@ th, td{
   text-align:center;
 }
 
+
+tbody tr:hover {
+  background: #f8f8f8;
+}
+
+
+/* ESCONDER ABAS */
+
 .hidden{
   display:none;
 }
@@ -106,10 +114,75 @@ th, td{
   font-weight:bold;
 
   cursor:pointer;
-
-  transition:0.2s;
 }
 
-.btn-cadastrar:hover{
-  background:#157347;
+
+/* BOTÃO BLOQUEADO */
+
+.btn-bloqueado{
+
+  background:#dc3545;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* REMOVER */
+
+.btn-remover{
+
+  background:#6c757d;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* EXCLUIR SELECIONADOS */
+
+.btn-excluir{
+
+  background:#dc3545;
+  color:white;
+
+  border:none;
+
+  padding:12px 18px;
+
+  border-radius:8px;
+
+  margin-bottom:20px;
+
+  cursor:pointer;
+
+  font-weight:bold;
+}
+
+.filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filtros input {
+  flex: 1;
+  margin-top: 0;
+}
+
+.filtros select {
+  width: 180px;
+  margin-top: 0;
 }
