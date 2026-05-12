@@ -61,9 +61,7 @@ router.post('/acesso', (req, res) => {
     });
   }
 
-  const uid = hexParaUID(uidHex);
-  console.log('UID convertido:', uid) // ← aqui
-  console.log('Tamanho:', uid.length)
+ 
 
   const uid = hexParaUID(uidHex)
   ultimoUidLido = uid
