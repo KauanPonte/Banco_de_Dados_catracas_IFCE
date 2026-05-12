@@ -30,6 +30,10 @@ async function cadastrarCartao() {
 
   alert('Cartão cadastrado!')
 
+  document.getElementById('uid').value = ''
+  document.getElementById('nome').value = ''
+  document.getElementById('matricula').value = ''
+
   carregarCartoes()
 }
 
@@ -55,27 +59,62 @@ async function carregarCartoes() {
 
   const cartoes = await resposta.json()
 
-  const tabelaTodos =
+  const tabela =
     document.getElementById('tabelaTodos')
 
-  const tabelaCartoes =
-    document.getElementById('tabelaCartoes')
-
-  const tabelaBloqueados =
-    document.getElementById('tabelaBloqueados')
-
-  tabelaTodos.innerHTML = ''
-  tabelaCartoes.innerHTML = ''
-  tabelaBloqueados.innerHTML = ''
+  tabela.innerHTML = ''
 
   cartoes.forEach(cartao => {
 
-    const linha = `
+    tabela.innerHTML += `
+
       <tr>
+
+        <td>
+          <input
+            type="checkbox"
+            class="check-aluno"
+            value="${cartao.uid}">
+        </td>
+
         <td>${cartao.uid}</td>
+
         <td>${cartao.nome}</td>
+
         <td>${cartao.matricula}</td>
-        <td>${cartao.status}</td>
+
+        <td>
+
+          <button
+            class="${
+              cartao.status === 'aprovado'
+                ? 'btn-aprovado'
+                : 'btn-bloqueado'
+            }"
+
+            onclick="alterarStatus(
+              '${cartao.uid}',
+              '${cartao.status}'
+            )">
+
+            ${cartao.status}
+
+          </button>
+
+        </td>
+
+        <td>
+
+          <button
+            class="btn-remover"
+            onclick="excluirAluno('${cartao.uid}')">
+
+            Excluir
+
+          </button>
+
+        </td>
+
       </tr>
     `
   })

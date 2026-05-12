@@ -13,16 +13,17 @@
   <!-- NAVBAR -->
   <header class="navbar">
 
-    <div class="logo-area">
+  <div class="topo">
 
-      <img
-       src="assets/ifce_logo.png"
-        class="logo"
-      >
-         <h2>Controle de Acesso do IFCE</h2>
-    </div>
+    <img src="assets/ifce_logo.png" class="logo">
 
-    <nav class="menu">
+    <h1 class="titulo-sistema">
+      Controle de Acesso do IFCE
+    </h1>
+
+  </div>
+
+  <nav class="menu">
 
     <button onclick="mostrarAba('todos')">
       Novos cadastros
@@ -30,7 +31,7 @@
 
     <button onclick="mostrarAba('cartoes'); carregarCartoes()">
       Todos os alunos
-      </button>
+    </button>
 
     <button onclick="mostrarAba('bloqueados'); carregarCartoesBloqueados()">
       Cartões bloqueados
@@ -42,7 +43,7 @@
 
   </nav>
 
-  </header>
+</header>
 
 
   <!-- CONTEÚDO -->
@@ -145,7 +146,7 @@
             <th>Nome</th>
             <th>Matrícula</th>
             <th>Status</th>
-          </tr>
+            </tr>
         </thead>
 
         <tbody id="tabelaCartoes"></tbody>
@@ -167,7 +168,8 @@
             <th>UID</th>
             <th>Nome</th>
             <th>Matrícula</th>
-          </tr>
+            <th>Status</th>
+            </tr>
         </thead>
 
         <tbody id="tabelaBloqueados"></tbody>

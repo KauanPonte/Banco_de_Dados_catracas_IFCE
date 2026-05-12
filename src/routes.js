@@ -40,6 +40,10 @@ const atualizarStatus = db.prepare(`
   UPDATE cartao SET status = ? WHERE uid = ?
 `);
 
+const excluirCartao = db.prepare(`
+  DELETE FROM cartao WHERE uid = ?
+`);
+
 
 //  POST /acesso — chamado pelo ESP32
 router.post('/acesso', (req, res) => {
@@ -56,6 +60,10 @@ router.post('/acesso', (req, res) => {
       liberar: false
     });
   }
+
+  const uid = hexParaUID(uidHex);
+  console.log('UID convertido:', uid) // ← aqui
+  console.log('Tamanho:', uid.length)
 
   const uid = hexParaUID(uidHex)
   ultimoUidLido = uid
@@ -140,6 +148,7 @@ router.get('/cartoes', (req, res) => {
 
 //  POST /cartoes
 router.post('/cartoes', (req, res) => {
+  console.log('Cadastrando cartão:', req.body)
   const { uid, nome, matricula, status } = req.body;
 
   if (!uid || !nome || !matricula || !status) {
