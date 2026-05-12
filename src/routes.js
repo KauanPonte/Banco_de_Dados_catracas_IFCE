@@ -5,17 +5,24 @@ const db      = require('./database');
 const buscarCartao  = db.prepare(`SELECT nome, status FROM cartao WHERE uid = ?`);
 const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`);
 
+let ultimoUidLido = null
 
 function hexParaUID(hex){
 const bytes = hex.match(/.{2}/g)
-const invertido = bytes.reverse().join('')
-return BigInt ('0x' + invertido).toString()
+ const invertido = bytes.reverse().join('')
+ return BigInt ('0x' + invertido).toString()
 }
 
 const listarAcessos = db.prepare(`
-  SELECT uid, resultado, data_hora
-  FROM registro_acesso
-  ORDER BY id DESC
+  SELECT
+    r.uid,
+    c.nome,
+    c.matricula,
+    r.resultado,
+    r.data_hora
+  FROM registro_acesso r
+  LEFT JOIN cartao c ON c.uid = r.uid
+  ORDER BY r.id DESC
   LIMIT 50
 `);
 
@@ -58,7 +65,12 @@ router.post('/acesso', (req, res) => {
   console.log('UID convertido:', uid) // ← aqui
   console.log('Tamanho:', uid.length)
 
-  const cartao = buscarCartao.get(uid);
+  const uid = hexParaUID(uidHex)
+  ultimoUidLido = uid
+  console.log('UID convertido:', uid) 
+  console.log('Tamanho:', uid.length)
+
+  const cartao = buscarCartao.get(uid)
   const todos = db.prepare('SELECT uid, length(uid) as tam FROM cartao').all()
   console.log('Cartões no banco:', todos)
   console.log('Cartão encontrado:', cartao)
@@ -111,19 +123,11 @@ router.post('/acesso', (req, res) => {
     }
   }
 
-  //  Alterna entre entrada e saída
-  let novoResultado = 'entrada';
-
-  if (ultimoAcesso?.resultado === 'entrada') {
-    novoResultado = 'bloqueado';
-  }
-
   //  Salva acesso
-  salvarAcesso.run(uid, novoResultado);
+  salvarAcesso.run(uid, 'entrada');
 
-  // Resposta
   return res.json({
-    resultado: novoResultado,
+    resultado: 'entrada',
     nome: cartao.nome,
     liberar: true
   });
@@ -260,6 +264,11 @@ router.delete('/cartoes/:uid', (req, res) => {
 
   res.json({ mensagem: `Cartão ${uid} removido` });
 });
+
+router.get('/ultimo-uid', (req,res) => {
+  res.json({uid: ultimoUidLido})
+  ultimoUidLido = null 
+})
 
 
 module.exports = router;

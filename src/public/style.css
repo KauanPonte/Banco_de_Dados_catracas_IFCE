@@ -235,8 +235,8 @@ td{
 }
 
 
-tr:hover{
-  background:#f8f8f8;
+tbody tr:hover {
+  background: #f8f8f8;
 }
 
 
@@ -251,6 +251,23 @@ tr:hover{
 .btn-aprovado{
 
   background:#198754;
+  color:white;
+
+  border:none;
+
+  padding:8px 14px;
+
+  border-radius:6px;
+
+  cursor:pointer;
+}
+
+
+/* BOTÃO BLOQUEADO */
+
+.btn-bloqueado{
+
+  background:#dc3545;
   color:white;
 
   border:none;
@@ -315,4 +332,20 @@ tr:hover{
   cursor:pointer;
 
   font-weight:bold;
+}
+
+.filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.filtros input {
+  flex: 1;
+  margin-top: 0;
+}
+
+.filtros select {
+  width: 180px;
+  margin-top: 0;
 }
