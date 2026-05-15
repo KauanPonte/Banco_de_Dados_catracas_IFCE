@@ -349,3 +349,111 @@ tbody tr:hover {
   width: 180px;
   margin-top: 0;
 }
+
+
+/* PAINEL DE VERIFICAÇÃO */
+
+.painel-acesso {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  transition: background 0.3s;
+}
+
+.painel-acesso.hidden {
+  display: none;
+}
+
+.painel-acesso.liberado {
+  background: #d4edda;
+  border: 2px solid #28a745;
+}
+
+.painel-acesso.negado {
+  background: #f8d7da;
+  border: 2px solid #dc3545;
+}
+
+.painel-foto {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #ccc;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: #fff;
+}
+
+.painel-foto::before {
+  content: '👤';
+}
+
+.painel-foto img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.painel-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.painel-info h2 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #222;
+}
+
+.painel-info p {
+  margin: 0;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
+.modal-box {
+  background: white;
+  border-radius: 14px;
+  padding: 30px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+}
+
+.modal-box h2 {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.painel-badge {
+  display: inline-block;
+  padding: 5px 14px;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  margin-top: 6px;
+  width: fit-content;
+}

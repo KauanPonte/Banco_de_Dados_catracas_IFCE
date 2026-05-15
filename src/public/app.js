@@ -53,72 +53,134 @@ function mostrarAba(...ids) {
       .classList.remove('hidden')
   })
 }
+let _todosAlunos = []
+
 async function carregarCartoes() {
 
   const resposta = await fetch('/cartoes')
+  _todosAlunos = await resposta.json()
+  filtrarAlunos()
+}
 
-  const cartoes = await resposta.json()
+function filtrarAlunos() {
+  const texto = document.getElementById('filtroAlunosTexto')?.value.toLowerCase() || ''
+  const status = document.getElementById('filtroAlunosStatus')?.value || ''
 
-  const tabela =
-    document.getElementById('tabelaTodos')
+  const filtrados = _todosAlunos.filter(c => {
+    const bateTexto =
+      c.nome.toLowerCase().includes(texto) ||
+      c.matricula.toLowerCase().includes(texto)
+    const bateStatus = status === '' || c.status === status
+    return bateTexto && bateStatus
+  })
 
+  const tabela = document.getElementById('tabelaTodos')
   tabela.innerHTML = ''
 
-  cartoes.forEach(cartao => {
-
+  filtrados.forEach(cartao => {
     tabela.innerHTML += `
-
       <tr>
-
-        <td>
-          <input
-            type="checkbox"
-            class="check-aluno"
-            value="${cartao.uid}">
-        </td>
-
+        <td><input type="checkbox" class="check-aluno" value="${cartao.uid}"></td>
         <td>${cartao.uid}</td>
-
         <td>${cartao.nome}</td>
-
         <td>${cartao.matricula}</td>
-
         <td>
-
-          <button
-            class="${
-              cartao.status === 'aprovado'
-                ? 'btn-aprovado'
-                : 'btn-bloqueado'
-            }"
-
-            onclick="alterarStatus(
-              '${cartao.uid}',
-              '${cartao.status}'
-            )">
-
+          <button class="${cartao.status === 'aprovado' ? 'btn-aprovado' : 'btn-bloqueado'}"
+            onclick="alterarStatus('${cartao.uid}', '${cartao.status}')">
             ${cartao.status}
-
           </button>
-
         </td>
-
-        <td>
-
-          <button
-            class="btn-remover"
-            onclick="excluirAluno('${cartao.uid}')">
-
+        <td style="display:flex; gap:6px">
+          <button class="btn-remover" style="background:#0d6efd"
+            onclick="abrirEditar('${cartao.uid}', '${cartao.nome}', '${cartao.matricula}', '${cartao.status}')">
+            Editar
+          </button>
+          <button class="btn-remover" onclick="excluirAluno('${cartao.uid}')">
             Excluir
-
           </button>
-
         </td>
-
       </tr>
     `
   })
 }
+
+function abrirEditar(uid, nome, matricula, status) {
+  document.getElementById('editUidOriginal').value = uid
+  document.getElementById('editUid').value = uid
+  document.getElementById('editNome').value = nome
+  document.getElementById('editMatricula').value = matricula
+  document.getElementById('editStatus').value = status
+  document.getElementById('modalEdicao').classList.remove('hidden')
+}
+
+function fecharModal() {
+  document.getElementById('modalEdicao').classList.add('hidden')
+  pararLeituraEdicao()
+}
+
+async function salvarEdicao() {
+  const uidOriginal = document.getElementById('editUidOriginal').value
+  const novoUid = document.getElementById('editUid').value
+  const nome = document.getElementById('editNome').value
+  const matricula = document.getElementById('editMatricula').value
+  const status = document.getElementById('editStatus').value
+
+  const resposta = await fetch(`/cartoes/${uidOriginal}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ novoUid, nome, matricula, status })
+  })
+
+  const dados = await resposta.json()
+
+  if (dados.erro) {
+    alert(dados.erro)
+    return
+  }
+
+  fecharModal()
+  carregarCartoes()
+}
+
+let _leituraEdicaoTimer = null
+
+async function aguardarCartaoEdicao() {
+  const btn = document.querySelector('[onclick="aguardarCartaoEdicao()"]')
+
+  if (_leituraEdicaoTimer) {
+    clearInterval(_leituraEdicaoTimer)
+    _leituraEdicaoTimer = null
+    btn.textContent = 'Ler cartão'
+    await fetch('/modo-leitura', { method: 'DELETE' })
+    return
+  }
+
+  btn.textContent = 'Aguardando...'
+
+  await fetch('/modo-leitura', { method: 'POST' })
+
+  _leituraEdicaoTimer = setInterval(async () => {
+    const resposta = await fetch('/ultimo-uid')
+    const dados = await resposta.json()
+
+    if (dados.uid) {
+      document.getElementById('editUid').value = dados.uid
+      clearInterval(_leituraEdicaoTimer)
+      _leituraEdicaoTimer = null
+      btn.textContent = 'Ler cartão'
+      await fetch('/modo-leitura', { method: 'DELETE' })
+    }
+  }, 1000)
+}
+
+function pararLeituraEdicao() {
+  if (_leituraEdicaoTimer) {
+    clearInterval(_leituraEdicaoTimer)
+    _leituraEdicaoTimer = null
+    fetch('/modo-leitura', { method: 'DELETE' })
+  }
+}
+
 
 async function excluirCartao(uid) {
   if (!confirm(`Deseja apagar o cartão ${uid}?`)) return
@@ -216,6 +278,50 @@ async function excluirAluno(uid) {
   carregarCartoes()
 }
 
+let _painelTimer = null
+let _painelSumirTimer = null
+
+async function verificarUltimoAcesso() {
+  const resposta = await fetch('/ultimo-acesso')
+  const dados = await resposta.json()
+
+  if(!dados.acesso) return
+
+  const a = dados.acesso
+
+  document.getElementById('painelNome').textContent = a.nome || 'Não cadastros'
+  document.getElementById('painelMatricula').textContent = 'Matrícula: ' + (a.matricula || '-')
+  document.getElementById('painelUID').textContent = 'UID: ' + a.uid
+  document.getElementById('painelHora').textContent =  a.data_hora
+
+  const badge = document.getElementById('painelResultado')
+  badge.textContent = a.resultado === 'entrada' ? 'ACESSO LIBERADO' : 'ACESSO NEGADO'
+  badge.className = 'painel-badge ' + (a.resultado === 'entrada' ? 'btn-aprovado' : 'btn-bloqueado')
+
+  const painel = document.getElementById('painelAcesso')
+  painel.classList.remove('hidden', 'liberado', 'negado')
+  painel.classList.add(a.resultado === 'entrada' ? 'liberado' : 'negado')
+
+  clearTimeout(_painelSumirTimer)
+  _painelSumirTimer = setTimeout(() => {
+    painel.classList.add('hidden')
+  }, 6000)
+  }
+
+  function iniciarPainelAcesso(){
+    clearInterval(_painelTimer)
+    _painelTimer = setInterval(verificarUltimoAcesso, 2000)
+  }
+
+  function pararPainelAcesso(){
+    clearInterval(_painelTimer)
+    clearTimeout(_painelSumirTimer)
+    _painelTimer = null 
+  }
+
+
+
+
 
 let _historicoTimer = null
 let _registrosHistorico = [] // guarda os dados para filtrar
@@ -264,28 +370,33 @@ function filtrarHistorico() {
 function iniciarHistorico() {
   clearInterval(_historicoTimer)
   carregarHistorico()
-  _historicoTimer = setInterval(carregarHistorico, 5000)
+  _historicoTimer = setInterval(carregarHistorico, 2000)
+  iniciarPainelAcesso()
 }
 
 function pararHistorico() {
   clearInterval(_historicoTimer)
   _historicoTimer = null
+  pararPainelAcesso()
 }
 
 let _leituraTimer = null 
 
-function aguardarCartao(){
+async function aguardarCartao(){
   const btn = document.querySelector('[onclick="aguardarCartao()"]')
 
   if (_leituraTimer) {
     clearInterval(_leituraTimer)
     _leituraTimer = null
     btn.textContent = 'Ler cartão'
+    await fetch('/modo-leitura', { method: 'DELETE' })
     return
   }
 
   btn.textContent = 'Aguardando...'
-  clearInterval(_leituraTimer)
+
+  // Ativa modo leitura no servidor (limpa UID antigo e bloqueia painel de acesso)
+  await fetch('/modo-leitura', { method: 'POST' })
 
   _leituraTimer = setInterval(async () => {
     const resposta = await fetch('/ultimo-uid')
@@ -296,6 +407,7 @@ function aguardarCartao(){
       clearInterval(_leituraTimer)
       _leituraTimer = null
       btn.textContent = 'Ler cartão'
+      await fetch('/modo-leitura', { method: 'DELETE' })
     }
   }, 1000)
 }
