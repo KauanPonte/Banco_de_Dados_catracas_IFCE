@@ -38,7 +38,7 @@
     </button>
 
     <button onclick="mostrarAba('historico'); iniciarHistorico()">
-      Histórico
+      Controle de acessos
     </button>
 
   </nav>
@@ -109,6 +109,19 @@
 
         <h1>Todos os alunos</h1>
 
+        <div class="filtros">
+          <input
+            type="text"
+            id="filtroAlunosTexto"
+            placeholder="Buscar por nome ou matrícula"
+            oninput="filtrarAlunos()">
+          <select id="filtroAlunosStatus" onchange="filtrarAlunos()">
+            <option value="">Todos</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="bloqueado">Bloqueado</option>
+          </select>
+        </div>
+
         <table>
           <thead>
             <tr>
@@ -130,28 +143,48 @@
 
       </div>
 
-</section>
+    </section>
 
 
-    <!-- CARTÕES -->
+    <!-- TODOS OS ALUNOS -->
     <section id="cartoes" class="aba hidden">
 
-      <h1>Cartões cadastrados</h1>
+      <div class="card">
 
-      <table>
+        <h1>Todos os alunos</h1>
 
-        <thead>
-          <tr>
-            <th>UID</th>
-            <th>Nome</th>
-            <th>Matrícula</th>
-            <th>Status</th>
+        <div class="filtros">
+          <input
+            type="text"
+            id="filtroAlunosTexto"
+            placeholder="Buscar por nome ou matrícula"
+            oninput="filtrarAlunos()">
+
+          <select id="filtroAlunosStatus" onchange="filtrarAlunos()">
+            <option value="">Todos</option>
+            <option value="aprovado">Aprovado</option>
+            <option value="bloqueado">Bloqueado</option>
+          </select>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th></th>
+              <th>UID</th>
+              <th>Nome</th>
+              <th>Matrícula</th>
+              <th>Status</th>
+              <th>Ações</th>
             </tr>
-        </thead>
+          </thead>
+          <button class="btn-excluir" onclick="excluirSelecionados()">
+            Excluir selecionados
+          </button>
+          <tbody id="tabelaTodos"></tbody>
+        </table>
 
-        <tbody id="tabelaCartoes"></tbody>
-
-      </table>
+      </div>
 
     </section>
 
@@ -184,7 +217,23 @@
 
       <div class="card">
 
-        <h1>Histórico de acessos</h1>
+        <h1>Controle de acessos</h1>
+
+        <div id="painelAcesso" class="painel-acesso hidden">
+
+          <div class="painel-foto">
+            <img id="painelFoto" src="" alt="">
+          </div>
+
+          <div class="painel-info">
+            <h2 id="painelNome">-</h2>
+            <p id="painelMatricula">Matrícula: -</p>
+            <p id="painelUID">UID: -</p>
+            <span id="painelResultado" class="painel-badge">-</span>
+            <p id="painelHora">-</p>
+          </div>
+
+        </div>
 
         <div class="filtros">
           <input
@@ -218,6 +267,37 @@
     </section>
 
   </main>
+
+  <!-- MODAL DE EDIÇÃO -->
+  <div id="modalEdicao" class="modal-overlay hidden">
+    <div class="modal-box">
+
+      <h2>Editar cadastro</h2>
+
+      <input type="hidden" id="editUidOriginal">
+
+      <div style="display:flex; gap:8px">
+        <input type="text" id="editUid" placeholder="UID">
+        <button class="btn-cadastrar" style="width:160px" onclick="aguardarCartaoEdicao()">
+          Ler cartão
+        </button>
+      </div>
+
+      <input type="text" id="editNome" placeholder="Nome">
+      <input type="text" id="editMatricula" placeholder="Matrícula">
+
+      <select id="editStatus">
+        <option value="aprovado">Aprovado</option>
+        <option value="bloqueado">Bloqueado</option>
+      </select>
+
+      <div style="display:flex; gap:8px; margin-top:16px">
+        <button class="btn-cadastrar" onclick="salvarEdicao()">Salvar</button>
+        <button class="btn-remover" onclick="fecharModal()">Cancelar</button>
+      </div>
+
+    </div>
+  </div>
 
   <script src="app.js"></script>
 
