@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('./database');
 
-const buscarCartao  = db.prepare(`SELECT nome, matricula, status FROM cartao WHERE uid = ?`);
+const buscarCartao  = db.prepare(`SELECT nome, matricula, status, foto FROM cartao WHERE uid = ?`);
 const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`);
 
 let ultimoUidLido = null
@@ -29,13 +29,13 @@ const listarAcessos = db.prepare(`
 `);
 
 const listarCartoes = db.prepare(`
-  SELECT id, uid, nome, matricula, status, criado_em
+  SELECT id, uid, nome, matricula, status, foto, criado_em
   FROM cartao
 `);
 
 const cadastrarCartao = db.prepare(`
-  INSERT INTO cartao (uid, nome, matricula, status)
-  VALUES (@uid, @nome, @matricula, @status)
+  INSERT INTO cartao (uid, nome, matricula, status, foto)
+  VALUES (@uid, @nome, @matricula, @status, @foto)
 `);
 
 const atualizarStatus = db.prepare(`
@@ -47,7 +47,7 @@ const excluirCartao = db.prepare(`
 `);
 
 const atualizarDados = db.prepare(`
-  UPDATE cartao SET uid = @novoUid, nome = @nome, matricula = @matricula, status = @status
+  UPDATE cartao SET uid = @novoUid, nome = @nome, matricula = @matricula, status = @status, foto = @foto
   WHERE uid = @uidAtual
 `);
 
@@ -105,6 +105,7 @@ router.post('/acesso', (req, res) => {
       matricula: cartao.matricula,
       uid: uid,
       resultado: 'bloqueado',
+      foto: cartao.foto || null,
       data_hora: new Date().toLocaleString('pt-BR')
     }
     salvarAcesso.run(uid, 'bloqueado');
@@ -145,12 +146,13 @@ router.post('/acesso', (req, res) => {
 
   salvarAcesso.run(uid, 'entrada');
 
-  ultimoAcessoInfo ={
+  ultimoAcessoInfo = {
     nome: cartao.nome,
     matricula: cartao.matricula,
     uid: uid,
     resultado: 'entrada',
-    data_hora:new Date().toLocaleString('pt-BR')
+    foto: cartao.foto || null,
+    data_hora: new Date().toLocaleString('pt-BR')
   }
 
   return res.json({
@@ -176,7 +178,7 @@ router.get('/cartoes', (req, res) => {
 //  POST /cartoes
 router.post('/cartoes', (req, res) => {
   console.log('Cadastrando cartão:', req.body)
-  const { uid, nome, matricula, status } = req.body;
+  const { uid, nome, matricula, status, foto } = req.body;
 
   if (!uid || !nome || !matricula || !status) {
     return res.status(400).json({
@@ -189,7 +191,8 @@ router.post('/cartoes', (req, res) => {
       uid: uid.toUpperCase(),
       nome,
       matricula,
-      status
+      status,
+      foto: foto || null
     });
 
     res.status(201).json({
@@ -294,14 +297,14 @@ router.delete('/cartoes/:uid', (req, res) => {
 
 router.put('/cartoes/:uid', (req, res) => {
   const uidAtual = req.params.uid
-  const { novoUid, nome, matricula, status } = req.body
+  const { novoUid, nome, matricula, status, foto } = req.body
 
   if (!novoUid || !nome || !matricula || !status) {
     return res.status(400).json({ erro: 'Todos os campos são obrigatórios' })
   }
 
   try {
-    atualizarDados.run({ uidAtual, novoUid: novoUid.toUpperCase(), nome, matricula, status })
+    atualizarDados.run({ uidAtual, novoUid: novoUid.toUpperCase(), nome, matricula, status, foto: foto || null })
     res.json({ mensagem: 'Dados atualizados com sucesso' })
   } catch (e) {
     res.status(409).json({ erro: 'UID já existe' })

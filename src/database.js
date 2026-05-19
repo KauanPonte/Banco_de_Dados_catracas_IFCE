@@ -24,10 +24,12 @@ db.exec(`
   );
 `)
 
-// Cartões de teste
+
 const inserir = db.prepare(`
   INSERT OR IGNORE INTO cartao (uid, nome, matricula, status)
   VALUES (@uid, @nome, @matricula, @status)
 `)
+
+try { db.exec(`ALTER TABLE cartao ADD COLUMN foto TEXT`) } catch (e) {}
 
 module.exports = db
