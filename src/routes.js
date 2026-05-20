@@ -112,6 +112,8 @@ router.post('/acesso', (req, res) => {
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Acesso bloqueado',
+      nome: cartao.nome,
+      matricula: cartao.matricula,
       liberar: false
     });
   }
@@ -158,6 +160,7 @@ router.post('/acesso', (req, res) => {
   return res.json({
     resultado: 'entrada',
     nome: cartao.nome,
+    matricula: cartao.matricula,
     liberar: true
   });
 });
@@ -331,6 +334,78 @@ router.get('/ultimo-acesso', (req, res) => {
   res.json({ acesso: ultimoAcessoInfo})
   ultimoAcessoInfo = null
 })
+
+// POST /matricula — chamado pelo ESP32 via teclado
+const buscarPorMatricula = db.prepare(`
+  SELECT uid, nome, matricula, status FROM cartao WHERE matricula = ?
+`);
+
+router.post('/matricula', (req, res) => {
+  const matricula = (req.body.matricula || '').trim();
+
+  if (!matricula) {
+    return res.json({ resultado: 'bloqueado', motivo: 'Matrícula inválida', liberar: false });
+  }
+
+  const cartao = buscarPorMatricula.get(matricula);
+
+  if (!cartao) {
+    return res.json({
+      resultado: 'bloqueado',
+      motivo: 'Matrícula não cadastrada',
+      liberar: false
+    });
+  }
+
+  if (cartao.status !== 'aprovado') {
+    return res.json({
+      resultado: 'bloqueado',
+      motivo: 'Acesso bloqueado',
+      nome: cartao.nome,
+      matricula: cartao.matricula,
+      liberar: false
+    });
+  }
+
+  // Proteção anti-repetição (igual ao RFID)
+  const ultimoAcesso = db.prepare(`
+    SELECT resultado, data_hora FROM registro_acesso
+    WHERE uid = ? ORDER BY id DESC LIMIT 1
+  `).get(cartao.uid);
+
+  if (ultimoAcesso) {
+    const diff = Date.now() - new Date(
+      ultimoAcesso.data_hora.replace(' ', 'T') + 'Z'
+    ).getTime();
+
+    if (diff < 5000) {
+      return res.json({
+        resultado: 'bloqueado',
+        motivo: 'Aguarde alguns segundos',
+        nome: cartao.nome,
+        matricula: cartao.matricula,
+        liberar: false
+      });
+    }
+  }
+
+  salvarAcesso.run(cartao.uid, 'entrada');
+
+  ultimoAcessoInfo = {
+    nome: cartao.nome,
+    matricula: cartao.matricula,
+    uid: cartao.uid,
+    resultado: 'entrada',
+    data_hora: new Date().toLocaleString('pt-BR')
+  };
+
+  return res.json({
+    resultado: 'entrada',
+    nome: cartao.nome,
+    matricula: cartao.matricula,
+    liberar: true
+  });
+});
 
 
 module.exports = router;
