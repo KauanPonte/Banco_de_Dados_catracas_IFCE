@@ -59,6 +59,15 @@
 
     <h1>Novo Cartão</h1>
 
+    <div class="foto-cadastro-area">
+      <div class="foto-preview" id="previewFotoContainer">
+        <img id="previewFotoImg" src="" alt="">
+      </div>
+      <button type="button" class="btn-foto" onclick="abrirWebcam('cadastro')">
+        📷 Tirar foto
+      </button>
+    </div>
+
   <div style="display: flex; gap: 8px">
     <input type="text" id="uid" placeholder="UID">
 
@@ -87,13 +96,11 @@
 
     </select>
 
-
-      
-    <button 
+    <button
     class="btn-cadastrar"
     onclick="cadastrarCartao()">
       Cadastrar
-    </button> 
+    </button>
         
 
   </div>
@@ -244,7 +251,7 @@
 
           <select id="filtroResultado" onchange="filtrarHistorico()">
             <option value="">Todos</option>
-            <option value="entrada">Entrada</option>
+            <option value="entrada">Aprovado</option>
             <option value="bloqueado">Bloqueado</option>
           </select>
         </div>
@@ -276,6 +283,15 @@
 
       <input type="hidden" id="editUidOriginal">
 
+      <div class="foto-cadastro-area">
+        <div class="foto-preview" id="editPreviewFotoContainer">
+          <img id="editPreviewFotoImg" src="" alt="">
+        </div>
+        <button type="button" class="btn-foto" onclick="abrirWebcam('edicao')">
+          📷 Tirar foto
+        </button>
+      </div>
+
       <div style="display:flex; gap:8px">
         <input type="text" id="editUid" placeholder="UID">
         <button class="btn-cadastrar" style="width:160px" onclick="aguardarCartaoEdicao()">
@@ -296,6 +312,19 @@
         <button class="btn-remover" onclick="fecharModal()">Cancelar</button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- MODAL WEBCAM -->
+  <div id="modalWebcam" class="modal-overlay hidden">
+    <div class="modal-box" style="max-width:520px">
+      <h2>Tirar foto</h2>
+      <video id="webcamVideo" autoplay playsinline style="width:100%; border-radius:8px; background:#000; display:block"></video>
+      <canvas id="webcamCanvas" style="display:none"></canvas>
+      <div style="display:flex; gap:8px; margin-top:16px">
+        <button class="btn-cadastrar" style="margin-top:0" onclick="capturarFoto()">Capturar</button>
+        <button class="btn-remover" onclick="fecharWebcam()">Cancelar</button>
+      </div>
     </div>
   </div>
 

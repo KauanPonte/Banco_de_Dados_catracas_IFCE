@@ -1,3 +1,53 @@
+let _fotoBase64 = null
+let _fotoEditBase64 = null
+let _streamAtivo = null
+let _webcamAlvo = null
+
+async function abrirWebcam(alvo) {
+  _webcamAlvo = alvo
+  document.getElementById('modalWebcam').classList.remove('hidden')
+  try {
+    _streamAtivo = await navigator.mediaDevices.getUserMedia({ video: true })
+    document.getElementById('webcamVideo').srcObject = _streamAtivo
+  } catch (e) {
+    alert('Não foi possível acessar a webcam')
+    fecharWebcam()
+  }
+}
+
+function capturarFoto() {
+  const video = document.getElementById('webcamVideo')
+  const canvas = document.getElementById('webcamCanvas')
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  canvas.getContext('2d').drawImage(video, 0, 0)
+  const base64 = canvas.toDataURL('image/jpeg', 0.7)
+
+  if (_webcamAlvo === 'cadastro') {
+    _fotoBase64 = base64
+    const container = document.getElementById('previewFotoContainer')
+    const img = document.getElementById('previewFotoImg')
+    img.src = base64
+    container.classList.add('tem-foto')
+  } else {
+    _fotoEditBase64 = base64
+    const container = document.getElementById('editPreviewFotoContainer')
+    const img = document.getElementById('editPreviewFotoImg')
+    img.src = base64
+    container.classList.add('tem-foto')
+  }
+
+  fecharWebcam()
+}
+
+function fecharWebcam() {
+  if (_streamAtivo) {
+    _streamAtivo.getTracks().forEach(t => t.stop())
+    _streamAtivo = null
+  }
+  document.getElementById('modalWebcam').classList.add('hidden')
+}
+
 async function cadastrarCartao() {
 
   const uid = document.getElementById('uid').value
@@ -13,12 +63,7 @@ async function cadastrarCartao() {
       'Content-Type': 'application/json'
     },
 
-    body: JSON.stringify({
-      uid,
-      nome,
-      matricula,
-      status
-    })
+    body: JSON.stringify({ uid, nome, matricula, status, foto: _fotoBase64 || null })
   })
 
   const dados = await resposta.json()
@@ -33,6 +78,9 @@ async function cadastrarCartao() {
   document.getElementById('uid').value = ''
   document.getElementById('nome').value = ''
   document.getElementById('matricula').value = ''
+  _fotoBase64 = null
+  document.getElementById('previewFotoImg').src = ''
+  document.getElementById('previewFotoContainer').classList.remove('tem-foto')
 
   carregarCartoes()
 }
@@ -92,7 +140,7 @@ function filtrarAlunos() {
         </td>
         <td style="display:flex; gap:6px">
           <button class="btn-remover" style="background:#0d6efd"
-            onclick="abrirEditar('${cartao.uid}', '${cartao.nome}', '${cartao.matricula}', '${cartao.status}')">
+            onclick="abrirEditar('${cartao.uid}')">
             Editar
           </button>
           <button class="btn-remover" onclick="excluirAluno('${cartao.uid}')">
@@ -104,12 +152,27 @@ function filtrarAlunos() {
   })
 }
 
-function abrirEditar(uid, nome, matricula, status) {
+function abrirEditar(uid) {
+  const cartao = _todosAlunos.find(c => c.uid === uid)
+  if (!cartao) return
+
   document.getElementById('editUidOriginal').value = uid
   document.getElementById('editUid').value = uid
-  document.getElementById('editNome').value = nome
-  document.getElementById('editMatricula').value = matricula
-  document.getElementById('editStatus').value = status
+  document.getElementById('editNome').value = cartao.nome
+  document.getElementById('editMatricula').value = cartao.matricula
+  document.getElementById('editStatus').value = cartao.status
+
+  _fotoEditBase64 = cartao.foto || null
+  const container = document.getElementById('editPreviewFotoContainer')
+  const img = document.getElementById('editPreviewFotoImg')
+  if (cartao.foto) {
+    img.src = cartao.foto
+    container.classList.add('tem-foto')
+  } else {
+    img.src = ''
+    container.classList.remove('tem-foto')
+  }
+
   document.getElementById('modalEdicao').classList.remove('hidden')
 }
 
@@ -128,7 +191,7 @@ async function salvarEdicao() {
   const resposta = await fetch(`/cartoes/${uidOriginal}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ novoUid, nome, matricula, status })
+    body: JSON.stringify({ novoUid, nome, matricula, status, foto: _fotoEditBase64 || null })
   })
 
   const dados = await resposta.json()
@@ -289,10 +352,20 @@ async function verificarUltimoAcesso() {
 
   const a = dados.acesso
 
-  document.getElementById('painelNome').textContent = a.nome || 'Não cadastros'
+  document.getElementById('painelNome').textContent = a.nome || 'Não cadastrado'
   document.getElementById('painelMatricula').textContent = 'Matrícula: ' + (a.matricula || '-')
   document.getElementById('painelUID').textContent = 'UID: ' + a.uid
-  document.getElementById('painelHora').textContent =  a.data_hora
+  document.getElementById('painelHora').textContent = a.data_hora
+
+  const painelFotoEl = document.getElementById('painelFoto')
+  const painelFotoContainer = painelFotoEl.parentElement
+  if (a.foto) {
+    painelFotoEl.src = a.foto
+    painelFotoContainer.classList.add('tem-foto')
+  } else {
+    painelFotoEl.src = ''
+    painelFotoContainer.classList.remove('tem-foto')
+  }
 
   const badge = document.getElementById('painelResultado')
   badge.textContent = a.resultado === 'entrada' ? 'ACESSO LIBERADO' : 'ACESSO NEGADO'
@@ -351,6 +424,7 @@ function filtrarHistorico() {
 
   filtrados.forEach(r => {
     const classeResultado = r.resultado === 'entrada' ? 'btn-aprovado' : 'btn-bloqueado'
+    const labelResultado = r.resultado === 'entrada' ? 'Aprovado' : 'Bloqueado'
     const dataFormatada = r.data_hora
       ? new Date(r.data_hora + 'Z').toLocaleString('pt-BR')
       : '—'
@@ -360,7 +434,7 @@ function filtrarHistorico() {
         <td>${r.nome || '—'}</td>
         <td>${r.matricula || '—'}</td>
         <td>${r.uid}</td>
-        <td><span class="${classeResultado}">${r.resultado}</span></td>
+        <td><span class="${classeResultado}">${labelResultado}</span></td>
         <td>${dataFormatada}</td>
       </tr>
     `

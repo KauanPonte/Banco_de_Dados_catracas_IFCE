@@ -448,6 +448,70 @@ tbody tr:hover {
   margin-bottom: 16px;
 }
 
+.foto-cadastro-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.foto-preview {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: #ccc;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+}
+
+.foto-preview::before {
+  content: '👤';
+}
+
+.foto-preview.tem-foto::before {
+  display: none;
+}
+
+.foto-preview.tem-foto img {
+  display: block;
+}
+
+.foto-preview img {
+  display: none;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.btn-foto {
+  background: #198754;
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-foto:hover {
+  background: #157347;
+}
+
+.painel-foto.tem-foto::before {
+  display: none;
+}
+
+.painel-foto.tem-foto img {
+  display: block;
+}
+
 .painel-badge {
   display: inline-block;
   padding: 5px 14px;
