@@ -1,0 +1,12 @@
+services:
+  catraca-server:
+    build: .
+    container_name: catraca-server
+    ports:
+      - "3000:3000"       # porta-do-host:porta-do-container
+    volumes:
+      - catraca-data:/data  # persiste o banco SQLite fora do container
+    restart: unless-stopped  # reinicia automaticamente se o servidor reiniciar
+
+volumes:
+  catraca-data:

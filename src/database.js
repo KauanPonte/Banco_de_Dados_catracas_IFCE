@@ -1,7 +1,8 @@
 const Database = require('better-sqlite3')
 
 const path = require('path')
-const db = new Database(path.join(__dirname, '..', 'catraca.db'))
+const dbPath = process.env.DB_PATH || path.join(__dirname, '..', 'catraca.db')
+const db = new Database(dbPath)
 
 // Garante integridade nas operações
 db.pragma('journal_mode = WAL')
