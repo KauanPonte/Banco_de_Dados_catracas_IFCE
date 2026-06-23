@@ -337,7 +337,7 @@ router.get('/ultimo-acesso', (req, res) => {
 
 // POST /matricula — chamado pelo ESP32 via teclado
 const buscarPorMatricula = db.prepare(`
-  SELECT uid, nome, matricula, status FROM cartao WHERE matricula = ?
+  SELECT uid, nome, matricula, status, foto FROM cartao WHERE matricula = ?
 `);
 
 router.post('/matricula', (req, res) => {
@@ -350,6 +350,13 @@ router.post('/matricula', (req, res) => {
   const cartao = buscarPorMatricula.get(matricula);
 
   if (!cartao) {
+    ultimoAcessoInfo = {
+      nome: 'Matrícula não cadastrada',
+      matricula: matricula,
+      uid: null,
+      resultado: 'bloqueado',
+      data_hora: new Date().toLocaleString('pt-BR')
+    };
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Matrícula não cadastrada',
@@ -358,6 +365,15 @@ router.post('/matricula', (req, res) => {
   }
 
   if (cartao.status !== 'aprovado') {
+    ultimoAcessoInfo = {
+      nome: cartao.nome,
+      matricula: cartao.matricula,
+      uid: cartao.uid,
+      resultado: 'bloqueado',
+      foto: cartao.foto || null,
+      data_hora: new Date().toLocaleString('pt-BR')
+    };
+    salvarAcesso.run(cartao.uid, 'bloqueado');
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Acesso bloqueado',
