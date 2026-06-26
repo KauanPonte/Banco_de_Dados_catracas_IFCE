@@ -33,4 +33,45 @@ const inserir = db.prepare(`
 
 try { db.exec(`ALTER TABLE cartao ADD COLUMN foto TEXT`) } catch (e) {}
 
+// Migration: tornar uid opcional em cartao
+const uidCol = db.prepare("PRAGMA table_info(cartao)").all().find(c => c.name === 'uid')
+if (uidCol && uidCol.notnull === 1) {
+  db.exec(`
+    CREATE TABLE cartao_v2 (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid       TEXT    UNIQUE,
+      nome      TEXT    NOT NULL,
+      matricula TEXT    NOT NULL,
+      status    TEXT    NOT NULL CHECK(status IN ('aprovado', 'bloqueado')),
+      foto      TEXT,
+      criado_em TEXT    DEFAULT (datetime('now'))
+    );
+    INSERT INTO cartao_v2 SELECT * FROM cartao;
+    DROP TABLE cartao;
+    ALTER TABLE cartao_v2 RENAME TO cartao;
+  `)
+}
+
+// Migration: tornar uid opcional e adicionar nome/matricula em registro_acesso
+const raUidCol = db.prepare("PRAGMA table_info(registro_acesso)").all().find(c => c.name === 'uid')
+if (raUidCol && raUidCol.notnull === 1) {
+  db.exec(`
+    CREATE TABLE registro_acesso_v2 (
+      id        INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid       TEXT,
+      nome      TEXT,
+      matricula TEXT,
+      resultado TEXT NOT NULL CHECK(resultado IN ('entrada', 'saida', 'bloqueado', 'teste')),
+      data_hora TEXT DEFAULT (datetime('now'))
+    );
+    INSERT INTO registro_acesso_v2 (id, uid, resultado, data_hora)
+      SELECT id, uid, resultado, data_hora FROM registro_acesso;
+    DROP TABLE registro_acesso;
+    ALTER TABLE registro_acesso_v2 RENAME TO registro_acesso;
+  `)
+} else {
+  try { db.exec(`ALTER TABLE registro_acesso ADD COLUMN nome TEXT`) } catch(e) {}
+  try { db.exec(`ALTER TABLE registro_acesso ADD COLUMN matricula TEXT`) } catch(e) {}
+}
+
 module.exports = db
