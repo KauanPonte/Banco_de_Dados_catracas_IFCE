@@ -50,7 +50,7 @@ function fecharWebcam() {
 
 async function cadastrarCartao() {
 
-  const uid = document.getElementById('uid').value
+  const uid = document.getElementById('uid').value.trim()
   const nome = document.getElementById('nome').value
   const matricula = document.getElementById('matricula').value
   const status = document.getElementById('status').value
@@ -63,7 +63,7 @@ async function cadastrarCartao() {
       'Content-Type': 'application/json'
     },
 
-    body: JSON.stringify({ uid, nome, matricula, status, foto: _fotoBase64 || null })
+    body: JSON.stringify({ uid: uid || null, nome, matricula, status, foto: _fotoBase64 || null })
   })
 
   const dados = await resposta.json()
@@ -128,22 +128,22 @@ function filtrarAlunos() {
   filtrados.forEach(cartao => {
     tabela.innerHTML += `
       <tr>
-        <td><input type="checkbox" class="check-aluno" value="${cartao.uid}"></td>
-        <td>${cartao.uid}</td>
+        <td><input type="checkbox" class="check-aluno" value="${cartao.id}"></td>
+        <td>${cartao.uid || '—'}</td>
         <td>${cartao.nome}</td>
         <td>${cartao.matricula}</td>
         <td>
           <button class="${cartao.status === 'aprovado' ? 'btn-aprovado' : 'btn-bloqueado'}"
-            onclick="alterarStatus('${cartao.uid}', '${cartao.status}')">
+            onclick="alterarStatus(${cartao.id}, '${cartao.status}')">
             ${cartao.status}
           </button>
         </td>
         <td style="display:flex; gap:6px">
           <button class="btn-remover" style="background:#0d6efd"
-            onclick="abrirEditar('${cartao.uid}')">
+            onclick="abrirEditar(${cartao.id})">
             Editar
           </button>
-          <button class="btn-remover" onclick="excluirAluno('${cartao.uid}')">
+          <button class="btn-remover" onclick="excluirAluno(${cartao.id})">
             Excluir
           </button>
         </td>
@@ -152,12 +152,12 @@ function filtrarAlunos() {
   })
 }
 
-function abrirEditar(uid) {
-  const cartao = _todosAlunos.find(c => c.uid === uid)
+function abrirEditar(id) {
+  const cartao = _todosAlunos.find(c => c.id === id)
   if (!cartao) return
 
-  document.getElementById('editUidOriginal').value = uid
-  document.getElementById('editUid').value = uid
+  document.getElementById('editId').value = id
+  document.getElementById('editUid').value = cartao.uid || ''
   document.getElementById('editNome').value = cartao.nome
   document.getElementById('editMatricula').value = cartao.matricula
   document.getElementById('editStatus').value = cartao.status
@@ -182,16 +182,16 @@ function fecharModal() {
 }
 
 async function salvarEdicao() {
-  const uidOriginal = document.getElementById('editUidOriginal').value
-  const novoUid = document.getElementById('editUid').value
+  const id = document.getElementById('editId').value
+  const novoUid = document.getElementById('editUid').value.trim()
   const nome = document.getElementById('editNome').value
   const matricula = document.getElementById('editMatricula').value
   const status = document.getElementById('editStatus').value
 
-  const resposta = await fetch(`/cartoes/${uidOriginal}`, {
+  const resposta = await fetch(`/cartoes/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ novoUid, nome, matricula, status, foto: _fotoEditBase64 || null })
+    body: JSON.stringify({ novoUid: novoUid || null, nome, matricula, status, foto: _fotoEditBase64 || null })
   })
 
   const dados = await resposta.json()
@@ -252,10 +252,10 @@ async function excluirCartao(uid) {
   carregarCartoes()
 }
 
-async function alterarStatus(uid, statusAtual) {
+async function alterarStatus(id, statusAtual) {
   const novoStatus = statusAtual === 'aprovado' ? 'bloqueado' : 'aprovado'
 
-  await fetch(`/cartoes/${uid}/status`, {
+  await fetch(`/cartoes/${id}/status`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ status: novoStatus })
@@ -306,38 +306,10 @@ async function carregarCartoesBloqueados() {
 
 carregarCartoes()
 
-async function alterarStatus(uid, statusAtual) {
-
-  const novoStatus =
-    statusAtual === 'aprovado'
-      ? 'bloqueado'
-      : 'aprovado'
-
-  await fetch(`/cartoes/${uid}/status`, {
-
-    method:'PATCH',
-
-    headers:{
-      'Content-Type':'application/json'
-    },
-
-    body: JSON.stringify({
-      status: novoStatus
-    })
-  })
-
-  carregarCartoes()
-}
-
-
-async function excluirAluno(uid) {
-
+async function excluirAluno(id) {
   if (!confirm('Excluir aluno?')) return
 
-  await fetch(`/cartoes/${uid}`, {
-    method:'DELETE'
-  })
-
+  await fetch(`/cartoes/${id}`, { method: 'DELETE' })
   carregarCartoes()
 }
 
@@ -487,17 +459,10 @@ async function aguardarCartao(){
 }
 
 async function excluirSelecionados() {
+  const checks = document.querySelectorAll('.check-aluno:checked')
+  const ids = [...checks].map(c => Number(c.value))
 
-  const checks =
-    document.querySelectorAll(
-      '.check-aluno:checked'
-    )
-
-  const uids = [...checks]
-    .map(c => c.value)
-
-  if (uids.length === 0) {
-
+  if (ids.length === 0) {
     alert('Nenhum aluno selecionado')
     return
   }
@@ -505,16 +470,9 @@ async function excluirSelecionados() {
   if (!confirm('Excluir selecionados?')) return
 
   await fetch('/cartoes', {
-
-    method:'DELETE',
-
-    headers:{
-      'Content-Type':'application/json'
-    },
-
-    body: JSON.stringify({
-      uids
-    })
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids })
   })
 
   carregarCartoes()

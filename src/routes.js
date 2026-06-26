@@ -3,7 +3,7 @@ const router  = express.Router();
 const db      = require('./database');
 
 const buscarCartao  = db.prepare(`SELECT nome, matricula, status, foto FROM cartao WHERE uid = ?`);
-const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, resultado) VALUES (?, ?)`);
+const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, nome, matricula, resultado) VALUES (@uid, @nome, @matricula, @resultado)`);
 
 let ultimoUidLido = null
 let ultimoAcessoInfo = null
@@ -17,14 +17,13 @@ const bytes = hex.match(/.{2}/g)
 
 const listarAcessos = db.prepare(`
   SELECT
-    r.uid,
-    c.nome,
-    c.matricula,
-    r.resultado,
-    MAX(r.data_hora) as data_hora
-  FROM registro_acesso r
-  INNER JOIN cartao c ON c.uid = r.uid
-  GROUP BY r.uid
+    uid,
+    nome,
+    matricula,
+    resultado,
+    MAX(data_hora) as data_hora
+  FROM registro_acesso
+  GROUP BY COALESCE(uid, matricula)
   ORDER BY data_hora DESC
 `);
 
@@ -39,16 +38,16 @@ const cadastrarCartao = db.prepare(`
 `);
 
 const atualizarStatus = db.prepare(`
-  UPDATE cartao SET status = ? WHERE uid = ?
+  UPDATE cartao SET status = ? WHERE id = ?
 `);
 
 const excluirCartao = db.prepare(`
-  DELETE FROM cartao WHERE uid = ?
+  DELETE FROM cartao WHERE id = ?
 `);
 
 const atualizarDados = db.prepare(`
   UPDATE cartao SET uid = @novoUid, nome = @nome, matricula = @matricula, status = @status, foto = @foto
-  WHERE uid = @uidAtual
+  WHERE id = @id
 `);
 
 
@@ -90,7 +89,7 @@ router.post('/acesso', (req, res) => {
       resultado: 'bloqueado',
       data_hora: new Date().toLocaleString('pt-BR')
     }
-    salvarAcesso.run(uid, 'bloqueado')
+    salvarAcesso.run({ uid, nome: null, matricula: null, resultado: 'bloqueado' })
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Cartão não cadastrado',
@@ -108,7 +107,7 @@ router.post('/acesso', (req, res) => {
       foto: cartao.foto || null,
       data_hora: new Date().toLocaleString('pt-BR')
     }
-    salvarAcesso.run(uid, 'bloqueado');
+    salvarAcesso.run({ uid, nome: cartao.nome, matricula: cartao.matricula, resultado: 'bloqueado' });
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Acesso bloqueado',
@@ -146,7 +145,7 @@ router.post('/acesso', (req, res) => {
     }
   }
 
-  salvarAcesso.run(uid, 'entrada');
+  salvarAcesso.run({ uid, nome: cartao.nome, matricula: cartao.matricula, resultado: 'entrada' });
 
   ultimoAcessoInfo = {
     nome: cartao.nome,
@@ -183,15 +182,15 @@ router.post('/cartoes', (req, res) => {
   console.log('Cadastrando cartão:', req.body)
   const { uid, nome, matricula, status, foto } = req.body;
 
-  if (!uid || !nome || !matricula || !status) {
+  if (!nome || !matricula || !status) {
     return res.status(400).json({
-      erro: 'Campos obrigatórios: uid, nome, matricula, status'
+      erro: 'Campos obrigatórios: nome, matricula, status'
     });
   }
 
   try {
     cadastrarCartao.run({
-      uid: uid.toUpperCase(),
+      uid: uid ? uid.toUpperCase() : null,
       nome,
       matricula,
       status,
@@ -209,9 +208,9 @@ router.post('/cartoes', (req, res) => {
 });
 
 
-//  PATCH /cartoes/:uid/status
-router.patch('/cartoes/:uid/status', (req, res) => {
-  const uid    = req.params.uid.toUpperCase();
+//  PATCH /cartoes/:id/status
+router.patch('/cartoes/:id/status', (req, res) => {
+  const id     = Number(req.params.id);
   const status = req.body.status;
 
   if (!['aprovado', 'bloqueado'].includes(status)) {
@@ -220,7 +219,7 @@ router.patch('/cartoes/:uid/status', (req, res) => {
     });
   }
 
-  const resultado = atualizarStatus.run(status, uid);
+  const resultado = atualizarStatus.run(status, id);
 
   if (resultado.changes === 0) {
     return res.status(404).json({
@@ -229,88 +228,59 @@ router.patch('/cartoes/:uid/status', (req, res) => {
   }
 
   res.json({
-    mensagem: `Cartão ${uid} agora está ${status}`
+    mensagem: `Cartão ${id} agora está ${status}`
   });
 });
-// DELETE /cartoes/:uid
-router.delete('/cartoes/:uid', (req, res) => {
-
-  const uid = req.params.uid.toUpperCase()
-
-  const remover = db.prepare(`
-    DELETE FROM cartao WHERE uid = ?
-  `)
-
-  const resultado = remover.run(uid)
+// DELETE /cartoes/:id
+router.delete('/cartoes/:id', (req, res) => {
+  const id = Number(req.params.id)
+  const resultado = excluirCartao.run(id)
 
   if (resultado.changes === 0) {
-
-    return res.status(404).json({
-      erro: 'Cartão não encontrado'
-    })
+    return res.status(404).json({ erro: 'Cartão não encontrado' })
   }
 
-  res.json({
-    mensagem: 'Cartão removido'
-  })
+  res.json({ mensagem: 'Cartão removido' })
 })
 
 
 // DELETE vários
 router.delete('/cartoes', (req, res) => {
+  const { ids } = req.body
 
-  const { uids } = req.body
-
-  if (!uids || !Array.isArray(uids)) {
-
-    return res.status(400).json({
-      erro:'Lista inválida'
-    })
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).json({ erro: 'Lista inválida' })
   }
 
-  const remover = db.prepare(`
-    DELETE FROM cartao WHERE uid = ?
-  `)
-
+  const remover = db.prepare(`DELETE FROM cartao WHERE id = ?`)
   const removerVarios = db.transaction((lista) => {
-
-    for (const uid of lista) {
-      remover.run(uid)
-    }
+    for (const id of lista) remover.run(Number(id))
   })
 
-  removerVarios(uids)
-
-  res.json({
-    mensagem:'Cartões removidos'
-  })
+  removerVarios(ids)
+  res.json({ mensagem: 'Cartões removidos' })
 })
 
-// DELETE /cartoes/:uid
-router.delete('/cartoes/:uid', (req, res) => {
-  const uid = req.params.uid.toUpperCase();
-  const resultado = excluirCartao.run(uid);
-
-  if (resultado.changes === 0) {
-    return res.status(404).json({ erro: 'Cartão não encontrado' });
-  }
-
-  res.json({ mensagem: `Cartão ${uid} removido` });
-});
-
-router.put('/cartoes/:uid', (req, res) => {
-  const uidAtual = req.params.uid
+router.put('/cartoes/:id', (req, res) => {
+  const id = Number(req.params.id)
   const { novoUid, nome, matricula, status, foto } = req.body
 
-  if (!novoUid || !nome || !matricula || !status) {
-    return res.status(400).json({ erro: 'Todos os campos são obrigatórios' })
+  if (!nome || !matricula || !status) {
+    return res.status(400).json({ erro: 'Campos obrigatórios: nome, matricula, status' })
   }
 
   try {
-    atualizarDados.run({ uidAtual, novoUid: novoUid.toUpperCase(), nome, matricula, status, foto: foto || null })
+    atualizarDados.run({
+      id,
+      novoUid: novoUid ? novoUid.toUpperCase() : null,
+      nome,
+      matricula,
+      status,
+      foto: foto || null
+    })
     res.json({ mensagem: 'Dados atualizados com sucesso' })
   } catch (e) {
-    res.status(409).json({ erro: 'UID já existe' })
+    res.status(409).json({ erro: 'UID já cadastrado' })
   }
 })
 
@@ -373,7 +343,7 @@ router.post('/matricula', (req, res) => {
       foto: cartao.foto || null,
       data_hora: new Date().toLocaleString('pt-BR')
     };
-    salvarAcesso.run(cartao.uid, 'bloqueado');
+    salvarAcesso.run({ uid: cartao.uid || null, nome: cartao.nome, matricula: cartao.matricula, resultado: 'bloqueado' });
     return res.json({
       resultado: 'bloqueado',
       motivo: 'Acesso bloqueado',
@@ -383,11 +353,11 @@ router.post('/matricula', (req, res) => {
     });
   }
 
-  // Proteção anti-repetição (igual ao RFID)
+  // Proteção anti-repetição
   const ultimoAcesso = db.prepare(`
     SELECT resultado, data_hora FROM registro_acesso
-    WHERE uid = ? ORDER BY id DESC LIMIT 1
-  `).get(cartao.uid);
+    WHERE ${cartao.uid ? 'uid = ?' : 'matricula = ?'} ORDER BY id DESC LIMIT 1
+  `).get(cartao.uid || cartao.matricula);
 
   if (ultimoAcesso) {
     const diff = Date.now() - new Date(
@@ -405,13 +375,14 @@ router.post('/matricula', (req, res) => {
     }
   }
 
-  salvarAcesso.run(cartao.uid, 'entrada');
+  salvarAcesso.run({ uid: cartao.uid || null, nome: cartao.nome, matricula: cartao.matricula, resultado: 'entrada' });
 
   ultimoAcessoInfo = {
     nome: cartao.nome,
     matricula: cartao.matricula,
     uid: cartao.uid,
     resultado: 'entrada',
+    foto: cartao.foto || null,
     data_hora: new Date().toLocaleString('pt-BR')
   };
 
