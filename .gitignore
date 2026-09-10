@@ -1,0 +1,17 @@
+# Dependências do Node
+node_modules/
+
+# Dados reais exportados do SUAP
+dados_suap/
+*.xls
+*.xlsx
+
+# Backups locais
+backup_banco/
+
+# Arquivos temporários do SQLite
+*.db-shm
+*.db-wal
+
+# Variáveis locais
+.env
