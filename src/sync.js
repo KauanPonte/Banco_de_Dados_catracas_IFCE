@@ -24,6 +24,17 @@ const db = require("./database");
 
     // Converte as linhas da planilha para objetos JavaScript
     const dados = XLSX.utils.sheet_to_json(planilha);
+    
+    // Mostra uma prévia dos 5 primeiros alunos reconhecidos
+const previaAlunos = dados.slice(0, 5).map((linha) => ({
+    nome: linha["Nome"],
+    matricula: linha["Matrícula"],
+    situacao: linha["Situação"]
+}));
+
+console.log("Prévia dos alunos reconhecidos:");
+console.log(previaAlunos);
+console.log("-----------------------------");
 
     // Procura um aluno pela matrícula
     const procurarAluno = db.prepare(`
