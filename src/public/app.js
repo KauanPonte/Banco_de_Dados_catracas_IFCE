@@ -315,14 +315,22 @@ async function excluirAluno(id) {
 
 let _painelTimer = null
 let _painelSumirTimer = null
+let _ultimoAcessoId = null // id do último acesso já exibido nesta tela
 
 async function verificarUltimoAcesso() {
   const resposta = await fetch('/ultimo-acesso')
   const dados = await resposta.json()
 
-  if(!dados.acesso) return
-
   const a = dados.acesso
+
+  // Ao abrir a página, só registra o acesso atual (não mostra acesso antigo)
+  if (_ultimoAcessoId === null) {
+    _ultimoAcessoId = a ? a.id : 0
+    return
+  }
+  if (!a) return
+  if (a.id === _ultimoAcessoId) return
+  _ultimoAcessoId = a.id
 
   document.getElementById('painelNome').textContent = a.nome || 'Não cadastrado'
   document.getElementById('painelMatricula').textContent = 'Matrícula: ' + (a.matricula || '-')
@@ -355,13 +363,16 @@ async function verificarUltimoAcesso() {
 
   function iniciarPainelAcesso(){
     clearInterval(_painelTimer)
+    _ultimoAcessoId = null // ao entrar na aba, não mostra acesso que aconteceu fora dela
+    verificarUltimoAcesso()
     _painelTimer = setInterval(verificarUltimoAcesso, 2000)
   }
 
   function pararPainelAcesso(){
     clearInterval(_painelTimer)
     clearTimeout(_painelSumirTimer)
-    _painelTimer = null 
+    _painelTimer = null
+    document.getElementById('painelAcesso').classList.add('hidden')
   }
 
 
