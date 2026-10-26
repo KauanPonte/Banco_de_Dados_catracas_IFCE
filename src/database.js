@@ -46,11 +46,18 @@ if (uidCol && uidCol.notnull === 1) {
       foto      TEXT,
       criado_em TEXT    DEFAULT (datetime('now'))
     );
-    INSERT INTO cartao_v2 SELECT * FROM cartao;
+    INSERT INTO cartao_v2 (id, uid, nome, matricula, status, foto, criado_em)
+      SELECT id, uid, nome, matricula, status, foto, criado_em FROM cartao;
     DROP TABLE cartao;
     ALTER TABLE cartao_v2 RENAME TO cartao;
   `)
 }
+
+// Correção: a migration antiga usava SELECT * e trocou foto com criado_em
+db.exec(`
+  UPDATE cartao SET foto = criado_em, criado_em = foto
+  WHERE foto GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] *'
+`)
 
 // Migration: tornar uid opcional e adicionar nome/matricula em registro_acesso
 const raUidCol = db.prepare("PRAGMA table_info(registro_acesso)").all().find(c => c.name === 'uid')
@@ -73,5 +80,13 @@ if (raUidCol && raUidCol.notnull === 1) {
   try { db.exec(`ALTER TABLE registro_acesso ADD COLUMN nome TEXT`) } catch(e) {}
   try { db.exec(`ALTER TABLE registro_acesso ADD COLUMN matricula TEXT`) } catch(e) {}
 }
+
+// Índices: sem eles cada leitura de cartão varria o histórico inteiro
+// (que só cresce) e a busca por matrícula varria todos os alunos do SUAP
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_registro_uid       ON registro_acesso(uid, id);
+  CREATE INDEX IF NOT EXISTS idx_registro_matricula ON registro_acesso(matricula, id);
+  CREATE INDEX IF NOT EXISTS idx_cartao_matricula   ON cartao(matricula);
+`)
 
 module.exports = db

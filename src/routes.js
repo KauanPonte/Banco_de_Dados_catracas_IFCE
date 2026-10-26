@@ -5,8 +5,19 @@ const db      = require('./database');
 const buscarCartao  = db.prepare(`SELECT nome, matricula, status, foto FROM cartao WHERE uid = ?`);
 const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, nome, matricula, resultado) VALUES (@uid, @nome, @matricula, @resultado)`);
 
+// último acesso do cartão (proteção anti-repetição) — preparadas uma vez só, usam os índices do database.js
+const ultimoAcessoPorUid = db.prepare(`
+  SELECT resultado, data_hora FROM registro_acesso
+  WHERE uid = ? ORDER BY id DESC LIMIT 1
+`);
+const ultimoAcessoPorMatricula = db.prepare(`
+  SELECT resultado, data_hora FROM registro_acesso
+  WHERE matricula = ? ORDER BY id DESC LIMIT 1
+`);
+
 let ultimoUidLido = null
 let ultimoAcessoInfo = null
+let acessoSeq = 0 // cada acesso ganha um id, assim várias telas podem acompanhar o painel
 let modoLeitura = false
 
 function hexParaUID(hex){
@@ -76,13 +87,11 @@ router.post('/acesso', (req, res) => {
   }
 
   const cartao = buscarCartao.get(uid)
-  const todos = db.prepare('SELECT uid, length(uid) as tam FROM cartao').all()
-  console.log('Cartões no banco:', todos)
-  console.log('Cartão encontrado:', cartao)
 
   //  Não cadastrado
   if (!cartao) {
     ultimoAcessoInfo = {
+      id: ++acessoSeq,
       nome: 'Cartão não cadastrado',
       matricula: null,
       uid: uid,
@@ -100,6 +109,7 @@ router.post('/acesso', (req, res) => {
   //  Bloqueado pelo sistema
   if (cartao.status !== 'aprovado') {
     ultimoAcessoInfo = {
+      id: ++acessoSeq,
       nome: cartao.nome,
       matricula: cartao.matricula,
       uid: uid,
@@ -118,13 +128,7 @@ router.post('/acesso', (req, res) => {
   }
 
   //  Busca último acesso
-  const ultimoAcesso = db.prepare(`
-    SELECT resultado, data_hora
-    FROM registro_acesso
-    WHERE uid = ?
-    ORDER BY id DESC
-    LIMIT 1
-  `).get(uid);
+  const ultimoAcesso = ultimoAcessoPorUid.get(uid);
 
   //  Proteção anti-repetição
   if (ultimoAcesso) {
@@ -134,7 +138,6 @@ router.post('/acesso', (req, res) => {
     ).getTime();
 
     const diff = agora - ultimo;
-    console.log('Diferença ms:', diff);
 
     if (diff < 5000) {
       return res.json({
@@ -148,6 +151,7 @@ router.post('/acesso', (req, res) => {
   salvarAcesso.run({ uid, nome: cartao.nome, matricula: cartao.matricula, resultado: 'entrada' });
 
   ultimoAcessoInfo = {
+    id: ++acessoSeq,
     nome: cartao.nome,
     matricula: cartao.matricula,
     uid: uid,
@@ -301,8 +305,7 @@ router.delete('/modo-leitura', (req, res) => {
 })
 
 router.get('/ultimo-acesso', (req, res) => {
-  res.json({ acesso: ultimoAcessoInfo})
-  ultimoAcessoInfo = null
+  res.json({ acesso: ultimoAcessoInfo })
 })
 
 // POST /matricula — chamado pelo ESP32 via teclado
@@ -321,6 +324,7 @@ router.post('/matricula', (req, res) => {
 
   if (!cartao) {
     ultimoAcessoInfo = {
+      id: ++acessoSeq,
       nome: 'Matrícula não cadastrada',
       matricula: matricula,
       uid: null,
@@ -336,6 +340,7 @@ router.post('/matricula', (req, res) => {
 
   if (cartao.status !== 'aprovado') {
     ultimoAcessoInfo = {
+      id: ++acessoSeq,
       nome: cartao.nome,
       matricula: cartao.matricula,
       uid: cartao.uid,
@@ -354,10 +359,9 @@ router.post('/matricula', (req, res) => {
   }
 
   // Proteção anti-repetição
-  const ultimoAcesso = db.prepare(`
-    SELECT resultado, data_hora FROM registro_acesso
-    WHERE ${cartao.uid ? 'uid = ?' : 'matricula = ?'} ORDER BY id DESC LIMIT 1
-  `).get(cartao.uid || cartao.matricula);
+  const ultimoAcesso = cartao.uid
+    ? ultimoAcessoPorUid.get(cartao.uid)
+    : ultimoAcessoPorMatricula.get(cartao.matricula);
 
   if (ultimoAcesso) {
     const diff = Date.now() - new Date(
@@ -378,6 +382,7 @@ router.post('/matricula', (req, res) => {
   salvarAcesso.run({ uid: cartao.uid || null, nome: cartao.nome, matricula: cartao.matricula, resultado: 'entrada' });
 
   ultimoAcessoInfo = {
+    id: ++acessoSeq,
     nome: cartao.nome,
     matricula: cartao.matricula,
     uid: cartao.uid,

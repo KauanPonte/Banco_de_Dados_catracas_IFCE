@@ -13,9 +13,8 @@ COPY package*.json ./
 # Instala as dependências de produção
 RUN npm install --production
 
-# Copia o restante do código-fonte
+# Copia o restante do código-fonte (o front-end fica em src/public)
 COPY src/ ./src/
-COPY public/ ./public/
 
 # Cria o diretório de dados onde o banco SQLite será armazenado
 RUN mkdir -p /data
