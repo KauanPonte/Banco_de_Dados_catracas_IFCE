@@ -1,0 +1,34 @@
+autoinstall:
+  version: 1
+
+  interactive-sections:
+    - network
+
+  locale: pt_BR.UTF-8
+  keyboard:
+    layout: br
+  timezone: America/Sao_Paulo
+
+  identity:
+    hostname: catraca-server
+    username: admin
+    password: "COLE_O_HASH_AQUI"
+
+  ssh:
+    install-server: true
+    allow-pw: true
+
+  storage:
+    layout:
+      name: direct
+
+  packages:
+    - docker.io
+    - docker-compose-v2
+
+  late-commands:
+    - cp -r /cdrom/catraca-server /target/opt/catraca-server
+    - cp /target/opt/catraca-server/instalacao/catraca.service /target/etc/systemd/system/catraca.service
+    - sed -i 's/\r$//' /target/etc/systemd/system/catraca.service
+    - curtin in-target -- systemctl enable catraca.service
+    - curtin in-target -- usermod -aG docker admin
