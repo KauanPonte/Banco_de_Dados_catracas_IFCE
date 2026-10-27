@@ -1,3 +1,25 @@
+// Se a sessão expirar, qualquer chamada à API volta 401: manda para o login
+const _fetchOriginal = window.fetch
+window.fetch = async (...args) => {
+  const resposta = await _fetchOriginal(...args)
+  if (resposta.status === 401) {
+    window.location.href = '/login.html'
+  }
+  return resposta
+}
+
+async function sair() {
+  await fetch('/logout', { method: 'POST' })
+  window.location.href = '/login.html'
+}
+
+// Texto mostrado na tela para cada status do banco
+const NOMES_STATUS = {
+  aprovado: 'Liberado',
+  bloqueado: 'Bloqueado',
+  pendente: 'Pendente'
+}
+
 let _fotoBase64 = null
 let _fotoEditBase64 = null
 let _streamAtivo = null
@@ -118,7 +140,9 @@ function filtrarAlunos() {
     const bateTexto =
       c.nome.toLowerCase().includes(texto) ||
       c.matricula.toLowerCase().includes(texto)
-    const bateStatus = status === '' || c.status === status
+    const bateStatus =
+      status === '' ||
+      (status === 'sem-cartao' ? !c.uid : c.status === status)
     return bateTexto && bateStatus
   })
 
@@ -133,9 +157,9 @@ function filtrarAlunos() {
         <td>${cartao.nome}</td>
         <td>${cartao.matricula}</td>
         <td>
-          <button class="${cartao.status === 'aprovado' ? 'btn-aprovado' : 'btn-bloqueado'}"
+          <button class="btn-${cartao.status}"
             onclick="alterarStatus(${cartao.id}, '${cartao.status}')">
-            ${cartao.status}
+            ${NOMES_STATUS[cartao.status]}
           </button>
         </td>
         <td style="display:flex; gap:6px">
@@ -253,7 +277,10 @@ async function excluirCartao(uid) {
 }
 
 async function alterarStatus(id, statusAtual) {
+  // pendente → aprovado, aprovado → bloqueado, bloqueado → aprovado
   const novoStatus = statusAtual === 'aprovado' ? 'bloqueado' : 'aprovado'
+
+  if (statusAtual === 'pendente' && !confirm('Liberar este aluno? Ele passará a ter acesso à catraca.')) return
 
   await fetch(`/cartoes/${id}/status`, {
     method: 'PATCH',
@@ -278,7 +305,7 @@ async function carregarCartoesAprovados() {
           <td>${cartao.uid}</td>
           <td>${cartao.nome}</td>
           <td>${cartao.matricula}</td>
-          <td>${cartao.status}</td>
+          <td>${NOMES_STATUS[cartao.status]}</td>
         </tr>
       `
     })
@@ -298,7 +325,7 @@ async function carregarCartoesBloqueados() {
           <td>${cartao.uid}</td>
           <td>${cartao.nome}</td>
           <td>${cartao.matricula}</td>
-          <td>${cartao.status}</td>
+          <td>${NOMES_STATUS[cartao.status]}</td>
         </tr>
       `
     })
@@ -407,7 +434,7 @@ function filtrarHistorico() {
 
   filtrados.forEach(r => {
     const classeResultado = r.resultado === 'entrada' ? 'btn-aprovado' : 'btn-bloqueado'
-    const labelResultado = r.resultado === 'entrada' ? 'Aprovado' : 'Bloqueado'
+    const labelResultado = r.resultado === 'entrada' ? 'Liberado' : 'Bloqueado'
     const dataFormatada = r.data_hora
       ? new Date(r.data_hora + 'Z').toLocaleString('pt-BR')
       : '—'

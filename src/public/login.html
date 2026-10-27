@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login - Catraca IFCE</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <header class="navbar">
+    <div class="topo">
+      <img src="assets/ifce_logo.png" class="logo">
+      <h1 class="titulo-sistema">
+        Controle de Acesso do IFCE
+      </h1>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <form class="card login-card" onsubmit="entrar(event)">
+
+      <h1>Entrar</h1>
+
+      <input type="text" id="usuario" placeholder="Usuário" autocomplete="username" required autofocus>
+      <input type="password" id="senha" placeholder="Senha" autocomplete="current-password" required>
+
+      <p id="erroLogin" class="erro-login hidden"></p>
+
+      <button type="submit" class="btn-cadastrar">
+        Entrar
+      </button>
+
+    </form>
+
+  </main>
+
+  <script>
+    async function entrar(event) {
+      event.preventDefault()
+
+      const usuario = document.getElementById('usuario').value.trim()
+      const senha = document.getElementById('senha').value
+      const erro = document.getElementById('erroLogin')
+
+      const resposta = await fetch('/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario, senha })
+      })
+
+      if (resposta.ok) {
+        window.location.href = '/'
+        return
+      }
+
+      const dados = await resposta.json()
+      erro.textContent = dados.erro || 'Não foi possível entrar'
+      erro.classList.remove('hidden')
+      document.getElementById('senha').value = ''
+    }
+  </script>
+
+</body>
+</html>

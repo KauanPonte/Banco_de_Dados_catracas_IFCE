@@ -59,6 +59,28 @@ db.exec(`
   WHERE foto GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9] *'
 `)
 
+// Migration: aceitar o status 'pendente' (aluno importado do SUAP sem foto/cartão)
+const cartaoSql = db.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'cartao'").get().sql
+if (!cartaoSql.includes('pendente')) {
+  db.transaction(() => {
+    db.exec(`
+      CREATE TABLE cartao_v3 (
+        id        INTEGER PRIMARY KEY AUTOINCREMENT,
+        uid       TEXT    UNIQUE,
+        nome      TEXT    NOT NULL,
+        matricula TEXT    NOT NULL,
+        status    TEXT    NOT NULL CHECK(status IN ('aprovado', 'bloqueado', 'pendente')),
+        foto      TEXT,
+        criado_em TEXT    DEFAULT (datetime('now'))
+      );
+      INSERT INTO cartao_v3 (id, uid, nome, matricula, status, foto, criado_em)
+        SELECT id, uid, nome, matricula, status, foto, criado_em FROM cartao;
+      DROP TABLE cartao;
+      ALTER TABLE cartao_v3 RENAME TO cartao;
+    `)
+  })()
+}
+
 // Migration: tornar uid opcional e adicionar nome/matricula em registro_acesso
 const raUidCol = db.prepare("PRAGMA table_info(registro_acesso)").all().find(c => c.name === 'uid')
 if (raUidCol && raUidCol.notnull === 1) {
@@ -87,6 +109,16 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_registro_uid       ON registro_acesso(uid, id);
   CREATE INDEX IF NOT EXISTS idx_registro_matricula ON registro_acesso(matricula, id);
   CREATE INDEX IF NOT EXISTS idx_cartao_matricula   ON cartao(matricula);
+`)
+
+// Usuários que podem acessar a página de cadastro (criados com: node src/usuario.js)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS usuario (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario    TEXT    NOT NULL UNIQUE,
+    senha_hash TEXT    NOT NULL,
+    criado_em  TEXT    DEFAULT (datetime('now'))
+  );
 `)
 
 module.exports = db

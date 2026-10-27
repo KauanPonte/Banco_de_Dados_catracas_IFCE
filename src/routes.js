@@ -1,6 +1,10 @@
 const express = require('express');
 const router  = express.Router();
 const db      = require('./database');
+const { exigirLogin } = require('./auth');
+
+// Precisa bater com o CHECK da tabela cartao no database.js
+const STATUS_VALIDOS = ['aprovado', 'bloqueado', 'pendente'];
 
 const buscarCartao  = db.prepare(`SELECT nome, matricula, status, foto FROM cartao WHERE uid = ?`);
 const salvarAcesso  = db.prepare(`INSERT INTO registro_acesso (uid, nome, matricula, resultado) VALUES (@uid, @nome, @matricula, @resultado)`);
@@ -120,7 +124,7 @@ router.post('/acesso', (req, res) => {
     salvarAcesso.run({ uid, nome: cartao.nome, matricula: cartao.matricula, resultado: 'bloqueado' });
     return res.json({
       resultado: 'bloqueado',
-      motivo: 'Acesso bloqueado',
+      motivo: cartao.status === 'pendente' ? 'Cadastro pendente' : 'Acesso bloqueado',
       nome: cartao.nome,
       matricula: cartao.matricula,
       liberar: false
@@ -170,19 +174,19 @@ router.post('/acesso', (req, res) => {
 
 
 //  GET /registros
-router.get('/registros', (req, res) => {
+router.get('/registros', exigirLogin, (req, res) => {
   res.json(listarAcessos.all());
 });
 
 
 //  GET /cartoes
-router.get('/cartoes', (req, res) => {
+router.get('/cartoes', exigirLogin, (req, res) => {
   res.json(listarCartoes.all());
 });
 
 
 //  POST /cartoes
-router.post('/cartoes', (req, res) => {
+router.post('/cartoes', exigirLogin, (req, res) => {
   console.log('Cadastrando cartão:', req.body)
   const { uid, nome, matricula, status, foto } = req.body;
 
@@ -190,6 +194,10 @@ router.post('/cartoes', (req, res) => {
     return res.status(400).json({
       erro: 'Campos obrigatórios: nome, matricula, status'
     });
+  }
+
+  if (!STATUS_VALIDOS.includes(status)) {
+    return res.status(400).json({ erro: 'Status inválido' });
   }
 
   try {
@@ -213,13 +221,13 @@ router.post('/cartoes', (req, res) => {
 
 
 //  PATCH /cartoes/:id/status
-router.patch('/cartoes/:id/status', (req, res) => {
+router.patch('/cartoes/:id/status', exigirLogin, (req, res) => {
   const id     = Number(req.params.id);
   const status = req.body.status;
 
-  if (!['aprovado', 'bloqueado'].includes(status)) {
+  if (!STATUS_VALIDOS.includes(status)) {
     return res.status(400).json({
-      erro: 'Status deve ser aprovado ou bloqueado'
+      erro: 'Status deve ser aprovado, bloqueado ou pendente'
     });
   }
 
@@ -236,7 +244,7 @@ router.patch('/cartoes/:id/status', (req, res) => {
   });
 });
 // DELETE /cartoes/:id
-router.delete('/cartoes/:id', (req, res) => {
+router.delete('/cartoes/:id', exigirLogin, (req, res) => {
   const id = Number(req.params.id)
   const resultado = excluirCartao.run(id)
 
@@ -249,7 +257,7 @@ router.delete('/cartoes/:id', (req, res) => {
 
 
 // DELETE vários
-router.delete('/cartoes', (req, res) => {
+router.delete('/cartoes', exigirLogin, (req, res) => {
   const { ids } = req.body
 
   if (!ids || !Array.isArray(ids)) {
@@ -265,12 +273,16 @@ router.delete('/cartoes', (req, res) => {
   res.json({ mensagem: 'Cartões removidos' })
 })
 
-router.put('/cartoes/:id', (req, res) => {
+router.put('/cartoes/:id', exigirLogin, (req, res) => {
   const id = Number(req.params.id)
   const { novoUid, nome, matricula, status, foto } = req.body
 
   if (!nome || !matricula || !status) {
     return res.status(400).json({ erro: 'Campos obrigatórios: nome, matricula, status' })
+  }
+
+  if (!STATUS_VALIDOS.includes(status)) {
+    return res.status(400).json({ erro: 'Status inválido' })
   }
 
   try {
@@ -288,23 +300,23 @@ router.put('/cartoes/:id', (req, res) => {
   }
 })
 
-router.get('/ultimo-uid', (req,res) => {
+router.get('/ultimo-uid', exigirLogin, (req,res) => {
   res.json({uid: ultimoUidLido})
   ultimoUidLido = null
 })
 
-router.post('/modo-leitura', (req, res) => {
+router.post('/modo-leitura', exigirLogin, (req, res) => {
   modoLeitura = true
   ultimoUidLido = null
   res.json({ ok: true })
 })
 
-router.delete('/modo-leitura', (req, res) => {
+router.delete('/modo-leitura', exigirLogin, (req, res) => {
   modoLeitura = false
   res.json({ ok: true })
 })
 
-router.get('/ultimo-acesso', (req, res) => {
+router.get('/ultimo-acesso', exigirLogin, (req, res) => {
   res.json({ acesso: ultimoAcessoInfo })
 })
 
@@ -351,7 +363,7 @@ router.post('/matricula', (req, res) => {
     salvarAcesso.run({ uid: cartao.uid || null, nome: cartao.nome, matricula: cartao.matricula, resultado: 'bloqueado' });
     return res.json({
       resultado: 'bloqueado',
-      motivo: 'Acesso bloqueado',
+      motivo: cartao.status === 'pendente' ? 'Cadastro pendente' : 'Acesso bloqueado',
       nome: cartao.nome,
       matricula: cartao.matricula,
       liberar: false

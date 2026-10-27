@@ -49,10 +49,11 @@ console.log("-----------------------------");
         VALUES (NULL, ?, ?, ?)
     `);
 
-    // Atualiza um aluno que já existe
+    // Atualiza só o nome de um aluno que já existe.
+    // O status não é alterado para não desbloquear quem foi bloqueado pelo painel.
     const atualizarAluno = db.prepare(`
         UPDATE cartao
-        SET nome = ?, status = ?
+        SET nome = ?
         WHERE matricula = ?
     `);
 
@@ -78,8 +79,8 @@ console.log("-----------------------------");
             continue;
         }
 
-        // O banco da catraca usa "aprovado"
-        const status = "aprovado";
+        // Aluno novo entra como "pendente" até receber foto e cartão no painel
+        const status = "pendente";
 
         const alunoExistente = procurarAluno.get(matricula);
 
@@ -87,7 +88,6 @@ console.log("-----------------------------");
 
             atualizarAluno.run(
                 nome,
-                status,
                 matricula
             );
 
