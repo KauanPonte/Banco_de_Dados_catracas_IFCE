@@ -1,20 +1,25 @@
 const express = require('express')
 const path = require('path')
 const routes = require('./routes')
+const auth = require('./auth')
 
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
 app.use(express.json())
-app.use(express.static(path.join(__dirname, '..', 'public'))) 
+
+// A página de cadastro só abre para quem está logado
+app.get(['/', '/index.html'], auth.exigirLoginPagina, (req, res) => {res.sendFile(
+    path.join(__dirname, 'public', 'index.html'))
+  });
+
+app.use(express.static(path.join(__dirname, '..', 'public'), { index: false }))
 app.use(express.static(
-  path.join(__dirname, 'public')
+  path.join(__dirname, 'public'), { index: false }
 ))
 
-app.get('/', (req, res) => {res.sendFile(
-    path.join(__dirname, 'public', 'index.html')) 
-  });
+app.use(auth.router)
 app.use(routes)
 
 app.listen(PORT, '0.0.0.0', () => {
@@ -25,4 +30,5 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('  GET  /cartoes      — lista cartões')
   console.log('  POST /cartoes      — cadastra cartão')
   console.log('  PATCH /cartoes/:uid — bloqueia/desbloqueia')
+  console.log('  (todas as rotas, exceto /acesso e /matricula, exigem login)')
 })
