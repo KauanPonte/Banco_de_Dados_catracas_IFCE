@@ -1,0 +1,14 @@
+name: catraca-server
+
+services:
+  catraca-server:
+    image: git.iracema.xyz/projetoifaccess/ifaccess_dockerized/catraca-server:${VERSAO:-latest}
+    container_name: catraca-server
+    ports:
+      - "${PORTA:-3000}:3000"
+    volumes:
+      - catraca-data:/data
+    restart: unless-stopped
+
+volumes:
+  catraca-data:
